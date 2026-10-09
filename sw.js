@@ -1,5 +1,5 @@
 /* おぼえるドリル：2回目からすぐ開く・電波が弱くても使えるようにする（記録の送信には通信が要る） */
-var VER = 'obo-20261009133518';
+var VER = 'obo-20261009151025';
 var CORE = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'favicon-32.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(VER).then(function (c) { return c.addAll(CORE); }).then(function () { return self.skipWaiting(); }));
