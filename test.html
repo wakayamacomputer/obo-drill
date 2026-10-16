@@ -548,6 +548,15 @@ function viewMe() {
     var done = ls.filter(function (x) { return lessonState(x.id).cleared; }).length;
     h += '<div class="row"><span>' + sj[1] + '</span><span class="sub">' + done + ' / ' + ls.length + '</span></div><div class="bar"><i style="width:' + (100 * done / ls.length) + '%"></i></div>';
   });
+  // 読解はレッスンではなく練習問題なので、「解いた問題の数」で進みを見せる
+  var dk = DATA.filter(function (d) { return d.subject === 'dokkai'; });
+  if (dk.length) {
+    var dkSeen = dk.filter(function (d) { return ST.items[d.id]; }).length, dkT = {};
+    dk.forEach(function (d) { var o = dkT[d.qtype] = dkT[d.qtype] || [0, 0]; o[1]++; if (ST.items[d.id]) o[0]++; });
+    h += '<div class="row"><span>' + SUBJ_NAME.dokkai + '</span><span class="sub">' + dkSeen + ' / ' + dk.length + T('{問|もん}') + '</span></div><div class="bar"><i style="width:' + (100 * dkSeen / dk.length) + '%"></i></div>' +
+      '<div class="sub">' + Object.keys(dkT).map(function (k) { return (QTYPE_NAME[k] || k).replace(/（.*）/, '') + ' ' + dkT[k][0] + '/' + dkT[k][1]; }).join('　') + '</div>' +
+      '<div class="sub">' + T('{読解|どっかい}は レッスンが ないので、{解|と}いた {問題|もんだい}の {数|かず}で {表|あらわ}しています。') + '</div>';
+  }
   h += '</div>';
 
   // 模試
@@ -615,6 +624,47 @@ $hb.onclick = openMe;
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$me.hidden) closeMe(); });
 
 /* ---------- ホーム ---------- */
+
+/* ---------- ホーム画面に追加しても、記録が1からにならないように ----------
+   iPhone は、Safari とホーム画面のアイコンで、記録の保存場所が別になる。
+   Safari で勉強した人は、追加の前に「記録のコード」をコピーし、アイコンから開いたときに貼りつけて引き継ぐ。 */
+function isStandalone() { try { return !!(window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)); } catch (e) { return false; } }
+function isMobileUA() { return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || ''); }
+function hasProgress() { return !!(ST && ((ST.events && ST.events.length) || (ST.items && Object.keys(ST.items).length))); }
+function hsCard() {
+  if (!ST || ST.hsHide) return '';
+  if (isStandalone()) {
+    if (hasProgress()) return '';
+    return '<div class="card warn" id="hs-in"><h2>📲 ' + T('Safari や ブラウザで {勉強|べんきょう}した {人|ひと}へ') + '</h2><div class="sub" style="margin-bottom:6px">' + T('これまでの {記録|きろく}を、ここに {引|ひ}きつげます。ブラウザで「{記録|きろく}の コードを コピー」した コードを、はりつけてください。') + '</div>' +
+      '<textarea id="hs-text" rows="3" style="width:100%;font-size:12px" placeholder="OBOB1:..."></textarea><button class="btn red" id="hs-go">' + T('{記録|きろく}を {引|ひ}きつぐ') + '</button><button class="btn sm" id="hs-no">' + T('はじめて {使|つか}います（とじる）') + '</button></div>';
+  }
+  if (!isMobileUA()) return '';
+  return '<div class="card" id="hs-out"><h2>📲 ' + T('ホーム画面に {追加|ついか}する {人|ひと}へ') + '</h2><div class="sub" style="line-height:1.8">' +
+    '① ' + (hasProgress() ? T('{先|さき}に、下の ボタンで {記録|きろく}の コードを コピー') : T('「ホーム{画面|がめん}に {追加|ついか}」を する')) + '<br>' +
+    (hasProgress() ? '② ' + T('「ホーム{画面|がめん}に {追加|ついか}」を する（iPhone は Safari）') + '<br>③ ' + T('アイコンから {開|ひら}き、おなじ {学籍番号|がくせきばんごう}で ログインして、コードを はりつける') :
+      '② ' + T('これからは、その アイコンから {開|ひら}いて {使|つか}う')) + '</div>' +
+    (hasProgress() ? '<button class="btn red" id="hs-copy">' + T('{記録|きろく}の コードを コピー') + '</button>' : '') + '<button class="btn sm" id="hs-close">' + T('とじる') + '</button></div>';
+}
+function bindHs() {
+  var b = function (id, f) { var e = document.getElementById(id); if (e) e.onclick = f; };
+  b('hs-close', function () { ST.hsHide = 1; save(); viewHome(); });
+  b('hs-no', function () { ST.hsHide = 1; save(); viewHome(); });
+  b('hs-copy', function () {
+    makeBackup().then(function (code) {
+      var done = function () { alert('コピーしました。つぎに「ホーム画面に追加」をして、アイコンから ひらき、同じ 学籍番号で ログインして、コードを はりつけてください。'); };
+      try { navigator.clipboard.writeText(code).then(done, function () { alert('コピーできませんでした。☰ の「べつの スマホで つづける」から コードを つくってください。'); }); }
+      catch (e) { alert('コピーできませんでした。☰ の「べつの スマホで つづける」から コードを つくってください。'); }
+    });
+  });
+  b('hs-go', function () {
+    var t = document.getElementById('hs-text').value;
+    readBackup(t).then(function (o) {
+      if (o.cls !== U.cls || o.s4 !== U.s4) return alert('べつの 学籍番号の コードです。（' + o.cls + '-' + o.s4 + '）');
+      var msg = restoreBackup(o); if (msg) return alert(msg);
+      viewHome(); alert('記録を 引きつぎました。');
+    }).catch(function (m) { alert(typeof m === 'string' ? m : 'コードが こわれています。'); });
+  });
+}
 function viewHome() {
   showMenuBtn(true);
   var dl = daysLeft(CFG.exam.date, now());
@@ -623,6 +673,7 @@ function viewHome() {
     '<div class="sub">JLPT N2（' + CFG.exam.label + '）</div></div>';
   var goal = goalN(), tc = todayCount(), sk = streakDays(), done = tc >= goal;
   h += '<div id="notice-box"></div>' + badgeNews();
+  h += hsCard();
   h += '<div class="card"><div class="row"><h2>' + T('{今日|きょう}の もくひょう') + '</h2><b style="color:var(--red)">' + T('{連続|れんぞく}') + ' ' + sk + T('{日|にち}') + '</b></div>' +
     '<div class="row"><span>' + Math.min(tc, 9999) + ' / ' + goal + T('{問|もん}') + '</span><span class="sub">' + (done ? T('もくひょう たっせい！') : T('あと ') + (goal - tc) + T('{問|もん}')) + '</span></div>' +
     '<div class="bar"><i style="width:' + Math.min(100, 100 * tc / goal) + '%;background:' + (done ? 'var(--good)' : 'var(--red)') + '"></i></div></div>';
@@ -690,6 +741,7 @@ function viewHome() {
   $app.innerHTML = h;
   var b = function (id, f) { var e = document.getElementById(id); if (e) e.onclick = f; };
   b('guide-btn', function () { showGuide(true); });
+  bindHs();
   Array.prototype.forEach.call($app.querySelectorAll('[data-plan]'), function (e) { e.onclick = function () { viewLesson(e.getAttribute('data-plan')); }; });
   if (!ST.guideSeen) showGuide(false);
   Array.prototype.forEach.call($app.querySelectorAll('[data-hs]'), function (e) { e.onclick = function () { startPractice('subject', e.getAttribute('data-hs')); }; });
