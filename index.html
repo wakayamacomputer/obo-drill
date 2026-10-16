@@ -45,6 +45,14 @@ label{display:block;margin:10px 0 2px;font-weight:700}
 .ch{display:block;width:100%;text-align:left;padding:14px;margin:8px 0;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg);font:inherit;font-size:19px;cursor:pointer;user-select:none}
 .ch.ok{border-color:var(--ok);background:rgba(46,125,50,.15)} .ch.ng{border-color:var(--ng);background:rgba(198,40,40,.13)}
 .fb{font-weight:700;font-size:18px;margin:8px 0}
+[lang="vi"]{font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif}
+.trx{margin-top:10px;padding:8px 10px;background:rgba(42,125,225,.09);border-radius:8px;font-size:.95em;line-height:1.7}
+.langbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.langbar .btn.sm{margin:0;padding:4px 12px;font-size:14px}
+.hero{border:3px solid var(--red);background:rgba(196,89,17,.08)}
+.hero ol{margin:6px 0 10px;padding-left:1.3em;line-height:1.6}
+.hero .s{display:block;color:var(--sub);font-size:.82em}
+
 .pass{position:relative}
 .pbar{margin-bottom:6px}
 .pbar .btn.sm{padding:2px 10px;margin:0 0 0 4px;font-size:14px}
@@ -395,10 +403,11 @@ function wrongItems() {
 function minutes(s) { return Math.max(1, Math.round((s.end - s.login) / 60000)); }
 
 /* ---------- 同じ場所の json ファイルを「読むだけ」（ranking.json / notice.json）。記録は送らない ---------- */
-function getJson(name, cb) {
-  if (TEST) return cb(null);
+var TRV = 'r1';   // 翻訳ファイルの版（翻訳を直したら変える）
+function getJson(name, cb, always) {
+  if (TEST && !always) return cb(null);
   try {
-    fetch(name + '?' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { cb(j); }).catch(function () { cb(null); });
+    fetch(name + '?' + (always ? 'v=' + TRV : Date.now()), always ? {} : { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { cb(j); }).catch(function () { cb(null); });
   } catch (e) { cb(null); }
 }
 
@@ -520,6 +529,8 @@ function viewMe() {
   h += '<div class="card"><h2>' + T('どれくらい {伸|の}びた？') + '</h2>' + (rows ? '<table><tr><th></th><th>' + T('はじめ') + '</th><th>' + T('いま') + '</th><th>' + T('{変|か}わった') + '</th></tr>' + rows + '</table>' +
     '<div class="sub">' + T('{正答率|せいとうりつ}を、はじめに {解|と}いた {問題|もんだい}と、{最近|さいきん}{解|と}いた {問題|もんだい}で くらべています。') + '</div>' : '<div class="sub">' + T('もうすこし {問題|もんだい}を {解|と}くと、{伸|の}びが {見|み}えます。') + '</div>') + '</div>';
 
+  h += '<div class="card"><h2>🌐 ' + T('{言語|げんご}') + ' / Language / <span lang="vi">Ngôn ngữ</span></h2><div class="sub">' + T('{解説|かいせつ}と カードの {意味|いみ}に、English / Tiếng Việt の {翻訳|ほんやく}を {出|だ}せます。') + '</div>' + langBar() + '</div>';
+
   // 1日の目標
   h += '<div class="card"><h2>' + T('1{日|にち}の もくひょう') + '</h2><div class="seg">' + [5, 10, 20, 30, 50].map(function (n) {
     return '<button class="btn' + (n === goalN() ? ' pri' : '') + '" data-goal="' + n + '">' + n + T('{問|もん}') + '</button>';
@@ -572,6 +583,7 @@ function viewMe() {
   document.getElementById('me-x').onclick = closeMe; document.getElementById('me-x2').onclick = closeMe;
   Array.prototype.forEach.call($me.querySelectorAll('[data-g]'), function (e) { e.onclick = function () { var y = $me.scrollTop; ME_G = e.getAttribute('data-g'); viewMe(); $me.scrollTop = y; }; });
   Array.prototype.forEach.call($me.querySelectorAll('[data-goal]'), function (e) { e.onclick = function () { var y = $me.scrollTop; ST.goal = +e.getAttribute('data-goal'); save(); viewMe(); $me.scrollTop = y; }; });
+  bindLang($me, function () { var y = $me.scrollTop; viewMe(); $me.scrollTop = y; });
   document.getElementById('bk-make').onclick = function () {
     var out = document.getElementById('bk-out'); out.innerHTML = '<div class="sub">…</div>';
     makeBackup().then(function (code) {
@@ -665,6 +677,19 @@ function bindHs() {
     }).catch(function (m) { alert(typeof m === 'string' ? m : 'コードが こわれています。'); });
   });
 }
+
+function heroCard() {
+  var cleared = 0; LESSON_SUBJ.forEach(function (sj) { lessonList(sj[0]).forEach(function (x) { if (lessonState(x.id).cleared) cleared++; }); });
+  if (cleared > 0) return '';
+  var gl = lessonList('goi'); if (!gl.length) return '';
+  var first = gl[0].id, nm = lessonName(first);
+  return '<div class="card hero"><h2>👉 ' + T('ここから はじめよう！') + ' <span class="sub">Start here! / <span lang="vi">Bắt đầu từ đây!</span></span></h2><ol>' +
+    '<li><b>「' + esc(nm) + '」</b>' + T('を ひらく') + '<span class="s">Open "' + esc(nm) + '" / <span lang="vi">Mở "' + esc(nm) + '"</span></span></li>' +
+    '<li>' + T('カードで {勉強|べんきょう}する') + '<span class="s">Study with the cards / <span lang="vi">Học bằng thẻ</span></span></li>' +
+    '<li>' + T('{確認|かくにん}テスト：10{問|もん}のうち 8{問|もん}で {合格|ごうかく}') + '<span class="s">Check test: pass with 8 of 10 / <span lang="vi">Kiểm tra: đạt 8/10 câu</span></span></li>' +
+    '<li>' + T('{合格|ごうかく}したら、つぎの レッスンへ') + '<span class="s">Pass, then go to the next lesson / <span lang="vi">Đạt thì sang bài tiếp theo</span></span></li></ol>' +
+    '<button class="btn red" id="hero-go">' + T('はじめる') + '：' + esc(nm) + '</button></div>';
+}
 function viewHome() {
   showMenuBtn(true);
   var dl = daysLeft(CFG.exam.date, now());
@@ -673,6 +698,7 @@ function viewHome() {
     '<div class="sub">JLPT N2（' + CFG.exam.label + '）</div></div>';
   var goal = goalN(), tc = todayCount(), sk = streakDays(), done = tc >= goal;
   h += '<div id="notice-box"></div>' + badgeNews();
+  h += heroCard();
   h += hsCard();
   h += '<div class="card"><div class="row"><h2>' + T('{今日|きょう}の もくひょう') + '</h2><b style="color:var(--red)">' + T('{連続|れんぞく}') + ' ' + sk + T('{日|にち}') + '</b></div>' +
     '<div class="row"><span>' + Math.min(tc, 9999) + ' / ' + goal + T('{問|もん}') + '</span><span class="sub">' + (done ? T('もくひょう たっせい！') : T('あと ') + (goal - tc) + T('{問|もん}')) + '</span></div>' +
@@ -742,6 +768,8 @@ function viewHome() {
   var b = function (id, f) { var e = document.getElementById(id); if (e) e.onclick = f; };
   b('guide-btn', function () { showGuide(true); });
   bindHs();
+  var hg = document.getElementById('hero-go'); if (hg) hg.onclick = function () { viewLesson(lessonList('goi')[0].id); };
+  if (ST.lang) trLoad(ST.lang);
   Array.prototype.forEach.call($app.querySelectorAll('[data-plan]'), function (e) { e.onclick = function () { viewLesson(e.getAttribute('data-plan')); }; });
   if (!ST.guideSeen) showGuide(false);
   Array.prototype.forEach.call($app.querySelectorAll('[data-hs]'), function (e) { e.onclick = function () { startPractice('subject', e.getAttribute('data-hs')); }; });
@@ -923,7 +951,33 @@ function viewLesson(l) {
   var c = document.getElementById('cards'); if (c) c.onclick = function () { showCard(l, 0, false); };
   var t = document.getElementById('test'); if (t) t.onclick = function () { if (!t.disabled) startLessonTest(l); };
 }
+
+/* ---------- 英語・ベトナム語の翻訳（学生が選んだときだけ、tr_en.json / tr_vi.json を読みこむ） ---------- */
+var TR = {};
+var LANGS = [['', '日本語のみ'], ['en', 'English'], ['vi', 'Tiếng Việt']];
+function trLoad(lang, cb) {
+  if (!lang || TR[lang]) return cb && cb();
+  getJson(lang === 'en' ? 'tr_en.json' : 'tr_vi.json', function (j) { TR[lang] = j && j.e ? j : { e: {}, c: {}, failed: true }; if (cb) cb(); }, true);
+}
+function trOf() { return (ST && ST.lang && TR[ST.lang]) || null; }
+function langBar() {
+  var cur = (ST && ST.lang) || '';
+  return '<div class="langbar"><span class="sub">🌐</span>' + LANGS.map(function (x) { return '<button class="btn sm' + (x[0] === cur ? ' pri' : '') + '" data-lang="' + x[0] + '"' + (x[0] === 'vi' ? ' lang="vi"' : '') + '>' + x[1] + '</button>'; }).join('') + '</div>';
+}
+function bindLang(root, again) {
+  Array.prototype.forEach.call(root.querySelectorAll('[data-lang]'), function (b) {
+    b.onclick = function () {
+      ST.lang = b.getAttribute('data-lang'); save();
+      if (!ST.lang) return again();
+      trLoad(ST.lang, function () { if (TR[ST.lang] && TR[ST.lang].failed) alert('つうしんが できないので、翻訳を よみこめません。 / Cannot load the translation (no connection).'); again(); });
+    };
+  });
+}
+function trBlock(text) {
+  return text ? '<div class="trx" lang="' + (ST.lang === 'vi' ? 'vi' : 'en') + '">' + esc(text).replace(/\r?\n/g, '<br>') + '</div>' : '';
+}
 function showCard(l, i, reveal) {
+  if (reveal && ST.lang && !TR[ST.lang]) return trLoad(ST.lang, function () { showCard(l, i, reveal); });
   var cs = lessonCards(l), c = cs[i], last = i === cs.length - 1;
   // 日本語だけで出す（言語の切りかえも、翻訳もない）
   var meaning = '<div style="font-size:19px">' + esc(c.m.ja) + '</div>';
@@ -932,9 +986,12 @@ function showCard(l, i, reveal) {
     '<div class="card" style="text-align:center"><div style="font-size:36px;font-weight:800;margin:10px 0;color:var(--navy)">' + esc(c.f) + '</div>' +
     (c.r ? '<div style="font-size:19px">' + esc(c.r) + '</div>' : '') + (c.p ? '<div class="sub">' + esc(c.p) + '</div>' : '') + (canSpeak() ? '<button class="btn sm" id="spk1">🔊 ' + T('{発音|はつおん}') + '</button>' : '') + '</div>';
   if (reveal) {
-    h += '<div class="card">' + meaning +
+    var tc = trOf() && TR[ST.lang].c[c.l + '|' + c.no];
+    h += '<div class="card">' + meaning + (tc ? trBlock(tc[0]) : '') +
       (c.e.ja ? '<div style="margin-top:12px;font-size:18px;line-height:2">' + R(c.e.ja).replace(/\r?\n/g, '<br>') + '</div>' + (canSpeak() ? '<button class="btn sm" id="spk2">🔊 ' + T('{例文|れいぶん}を {聞|き}く') + '</button>' : '') : '') +
-      (note ? '<div class="sub" style="margin-top:12px;border-top:1px solid var(--line);padding-top:8px">' + esc(note).replace(/\r?\n/g, '<br>') + '</div>' : '') + '</div>';
+      (tc && tc[1] ? trBlock(tc[1]) : '') +
+      (note ? '<div class="sub" style="margin-top:12px;border-top:1px solid var(--line);padding-top:8px">' + esc(note).replace(/\r?\n/g, '<br>') + '</div>' : '') +
+      (tc && tc[2] ? trBlock(tc[2]) : '') + langBar() + '</div>';
   } else {
     h += '<button class="btn pri" id="rv">' + T('{意味|いみ}を {見|み}る') + '</button><div class="sub" style="text-align:center">' + T('{先|さき}に {意味|いみ}を {思|おも}い{出|だ}してから {見|み}ましょう') + '</div>';
   }
@@ -944,6 +1001,7 @@ function showCard(l, i, reveal) {
   $app.innerHTML = h; window.scrollTo(0, 0);
   if (last) { var L = ST.lessons[l] = ST.lessons[l] || {}; if (!L.learned) { L.learned = true; save(); } }   // 最後のカードまで見たら「学習ずみ」
   var $ = function (id) { return document.getElementById(id); };
+  bindLang($app, function () { showCard(l, i, true); });
   if ($('rv')) $('rv').onclick = function () { showCard(l, i, true); };
   if ($('spk1')) $('spk1').onclick = function () { speak(c.r || c.f); };
   if ($('spk2')) $('spk2').onclick = function () { speak(plain(c.e.ja).replace(/\s*\n\s*/g, '。')); };
@@ -1261,9 +1319,11 @@ function answer(i) {
 /* 解説：日本語だけ（言語の切りかえも、翻訳もない） */
 function showExpl(d) {
   var box = document.getElementById('ex'); if (!box) return;
+  if (ST.lang && !TR[ST.lang]) return trLoad(ST.lang, function () { showExpl(d); });
   var br = function (t) { return t.replace(/\r?\n/g, '<br>'); };
   box.innerHTML = '<div class="card" style="margin:8px 0"><div class="sub" style="margin-bottom:4px">' + T('{解説|かいせつ}') + '</div>' +
-    '<div lang="ja" style="line-height:1.8">' + br(R(d.x.ja)) + '</div></div>';
+    '<div lang="ja" style="line-height:1.8">' + br(R(d.x.ja)) + '</div>' + (trOf() ? trBlock(TR[ST.lang].e[d.id]) : '') + langBar() + '</div>';
+  bindLang(box, function () { showExpl(d); });
 }
 function finish() {
   clearTimeout(_tm);
