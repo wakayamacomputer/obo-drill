@@ -46,6 +46,14 @@ label{display:block;margin:10px 0 2px;font-weight:700}
 .ch.ok{border-color:var(--ok);background:rgba(46,125,50,.15)} .ch.ng{border-color:var(--ng);background:rgba(198,40,40,.13)}
 .fb{font-weight:700;font-size:18px;margin:8px 0}
 [lang="vi"]{font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif}
+
+.warnov{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:18px}
+.warnbox{background:var(--card);color:var(--fg);border:5px solid #d32f2f;border-radius:18px;max-width:420px;width:100%;padding:18px 18px 16px;box-shadow:0 8px 30px rgba(0,0,0,.5);text-align:center}
+.warnbox .wi{font-size:56px;line-height:1}
+.warnbox h2{color:#d32f2f;font-size:30px;margin:6px 0 10px}
+.warnbox .wj{font-size:19px;line-height:1.7;font-weight:700;text-align:left}
+.warnbox .wl{font-size:14px;line-height:1.6;color:var(--sub);text-align:left;margin-top:8px}
+.warnbox .btn{margin:10px 0 0}
 .trx{margin-top:10px;padding:8px 10px;background:rgba(42,125,225,.09);border-radius:8px;font-size:.95em;line-height:1.7}
 .langbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px}
 .langbar .btn.sm{margin:0;padding:4px 12px;font-size:14px}
@@ -698,6 +706,7 @@ function viewHome() {
     '<div class="sub">JLPT N2（' + CFG.exam.label + '）</div></div>';
   var goal = goalN(), tc = todayCount(), sk = streakDays(), done = tc >= goal;
   h += '<div id="notice-box"></div>' + badgeNews();
+  h += leaveCard();
   h += heroCard();
   h += hsCard();
   h += '<div class="card"><div class="row"><h2>' + T('{今日|きょう}の もくひょう') + '</h2><b style="color:var(--red)">' + T('{連続|れんぞく}') + ' ' + sk + T('{日|にち}') + '</b></div>' +
@@ -768,6 +777,7 @@ function viewHome() {
   var b = function (id, f) { var e = document.getElementById(id); if (e) e.onclick = f; };
   b('guide-btn', function () { showGuide(true); });
   bindHs();
+  var lo = document.getElementById('leave-ok'); if (lo) lo.onclick = function () { delete ST.leaveNote; save(); viewHome(); };
   var hg = document.getElementById('hero-go'); if (hg) hg.onclick = function () { viewLesson(lessonList('goi')[0].id); };
   if (ST.lang) trLoad(ST.lang);
   Array.prototype.forEach.call($app.querySelectorAll('[data-plan]'), function (e) { e.onclick = function () { viewLesson(e.getAttribute('data-plan')); }; });
@@ -1059,7 +1069,7 @@ function startPractice(mode, arg) {
   Q = { mode: 'practice', qs: qs, i: 0, ok: 0, res: [], t0: 0, pm: mode, pa: arg };
   showQ();
 }
-function startMock() {
+function startMockNow() {
   var by = {}; DATA.forEach(function (d) { (by[d.qtype] = by[d.qtype] || []).push(d); });
   var types = shuffle(Object.keys(by)), qs = [], ptr = {};
   Object.keys(by).forEach(function (t) { by[t] = shuffle(by[t]); ptr[t] = 0; });
@@ -1088,7 +1098,8 @@ var EXAM_INST = {
 var EXAM_PASS = { secMin: 19, secMax: 60 };   // N2：各区分19点以上・各区分60点満点（総合90/180）
 function examNums() { return Object.keys(MOCK.exams || {}).sort(); }
 function viewMockMenu() {
-  var h = '<h1>' + T('{模試|もし}モード') + '</h1>';
+  var h = '<h1>' + T('{模試|もし}モード') + '</h1>' +
+    '<div class="card" style="border-color:#d32f2f"><div style="color:#d32f2f;font-weight:800">⚠ ' + T('{注意|ちゅうい}') + '</div><div class="sub" style="color:var(--fg)">' + T('{模試|もし}の ちゅうに {画面|がめん}を はなれると、そこで おわります。') + '</div></div>';
   if (gateLeft() > 0) {
     h += '<div class="card warn"><h2>🔒 ' + T('{模試|もし}の {前|まえ}に レッスンを しましょう') + '</h2>' +
       '<div class="sub" style="margin-bottom:6px">' + T('{語彙|ごい}・{文法|ぶんぽう}・{漢字|かんじ}の レッスン（カードで {学習|がくしゅう}して、{確認|かくにん}テストに {合格|ごうかく}）を、それぞれ ') + (gateRows()[0] ? gateRows()[0].need : 3) + T('つずつ {終|お}えると、{模試|もし}が うけられます。') + '</div>' +
@@ -1113,7 +1124,24 @@ function viewMockMenu() {
   document.getElementById('mini').onclick = startMock;
   Array.prototype.forEach.call($app.querySelectorAll('[data-e]'), function (e) { e.onclick = function () { startExam(e.getAttribute('data-e')); }; });
 }
-function startExam(n) {
+
+/* ---------- 模試の前の「注意」ポップ（画面を はなれると 終了する） ---------- */
+function examWarn(go) {
+  var ov = document.createElement('div'); ov.className = 'warnov'; ov.id = 'warnov';
+  ov.innerHTML = '<div class="warnbox" role="alertdialog"><div class="wi">⚠️</div><h2>' + T('{注意|ちゅうい}') + ' / Attention</h2>' +
+    '<div class="wj">' + T('{模試|もし}の ちゅうに、{別|べつ}の アプリや {画面|がめん}に {切|き}りかえると、そこで {模試|もし}は おわり、ホームに もどります。') + '<br>' + T('この {画面|がめん}の ままで {解|と}いてください。') + '</div>' +
+    '<div class="wl">If you switch to another app or screen during the test, the test ends immediately and you go back to the home screen. Please stay on this screen.<br>' +
+    '<span lang="vi">Nếu chuyển sang ứng dụng hoặc màn hình khác khi đang làm bài, bài thi sẽ kết thúc ngay và quay về màn hình chính. Hãy giữ nguyên màn hình này.</span></div>' +
+    '<button class="btn red" id="warn-ok">' + T('わかりました（はじめる）') + '</button><button class="btn sm" id="warn-no">' + T('やめる') + '</button></div>';
+  document.body.appendChild(ov);
+  document.body.style.overflow = 'hidden';
+  var close = function () { ov.remove(); document.body.style.overflow = ''; };
+  document.getElementById('warn-ok').onclick = function () { close(); go(); };
+  document.getElementById('warn-no').onclick = close;
+}
+function startMock() { examWarn(startMockNow); }
+function startExam(n) { examWarn(function () { startExamNow(n); }); }
+function startExamNow(n) {
   Q = { mode: 'exam', exam: n, qs: MOCK.exams[n], i: 0, ans: {}, t0: now(), end: now() + MOCK.minutes * 60000 };
   showExam();
 }
@@ -1141,7 +1169,7 @@ function showExam() {
   document.getElementById('nx').onclick = function () { Q.i++; showExam(); };
   document.getElementById('fin').onclick = function () {
     var un = Q.qs.length - Object.keys(Q.ans).length;
-    if (!un || confirm('まだ ' + un + 'もん こたえていません。おわりますか？')) finishExam();
+    grace(); var okc = !un || confirm('まだ ' + un + 'もん こたえていません。おわりますか？'); grace(); if (okc) finishExam();
   };
   tick();
 }
@@ -1273,10 +1301,40 @@ function showQ() {
   Array.prototype.forEach.call($app.querySelectorAll('.ch'), function (e) { e.onclick = function () { answer(+e.getAttribute('data-i')); }; });
   var qb = document.getElementById('quit'); if (qb) qb.onclick = function () {
     if (Q.res.length) return finish(); // 結果画面に「記録を送る」を出す
-    if (ST.events.length - ST.sentUpTo > 0 && CFG.backend !== 'none' && confirm('まだ せんせいに きろくを おくっていません。いま おくりますか？')) { Q = null; return sendRecords(true); }
+    if (ST.events.length - ST.sentUpTo > 0 && CFG.backend !== 'none' && (grace(), confirm('まだ せんせいに きろくを おくっていません。いま おくりますか？'))) { Q = null; return sendRecords(true); }
     Q = null; viewHome();
   };
   tick();
+}
+
+/* ---------- 模試中に画面をはなれたら、その場で終了してホームに戻る（漢字小テストと同じ考え方） ----------
+   模試モード・本番形式の模試のあいだだけ働く。別のアプリへ切り替える・ブラウザの別のタブを開く・画面を消す、などで終了する。 */
+var GRACE = 0, lastBeat = Date.now(), lastW = window.innerWidth, lastH = window.innerHeight;
+function grace(ms) { GRACE = Date.now() + (ms || 4000); }
+function inExam() { return !!(Q && (Q.mode === 'mock' || Q.mode === 'exam') && !Q.ended); }
+function examLeave() {
+  if (!inExam() || Date.now() < GRACE) return;
+  Q.ended = true; clearTimeout(_tm);
+  var kind = Q.mode;
+  ST.leaves = ST.leaves || []; ST.leaves.push({ ts: now(), kind: kind });
+  ST.leaveNote = now(); save();
+  Q = null;
+  closeMe(); viewHome();
+}
+document.addEventListener('visibilitychange', function () { if (document.hidden) examLeave(); });
+window.addEventListener('pagehide', examLeave);
+window.addEventListener('resize', function () {   // アプリの切りかえ画面で、画面が小さく縮む端末がある（向きを変えたときは、ふくまない）
+  var w = window.innerWidth, h = window.innerHeight, same = (w > h) === (lastW > lastH);
+  if (same && (w < lastW * 0.6 || h < lastH * 0.6)) examLeave();
+  lastW = w; lastH = h;
+});
+setInterval(function () {   // タイマーが大きく止まっていたら、裏に回っていたとみなす
+  var t = Date.now(), gap = t - lastBeat; lastBeat = t;
+  if (gap > 2500 && inExam()) examLeave();
+}, 500);
+function leaveCard() {
+  if (!ST || !ST.leaveNote) return '';
+  return '<div class="card warn" id="leave-note"><h2>⚠ ' + T('{模試|もし}を {中止|ちゅうし}しました') + '</h2><div class="sub">' + T('{画面|がめん}を はなれた ため、{模試|もし}は そこで おわりました。{模試|もし}の ときは、この {画面|がめん}の ままで {解|と}いてください。') + '</div><button class="btn sm" id="leave-ok">' + T('とじる') + '</button></div>';
 }
 var _tm = null;
 function tick() {
