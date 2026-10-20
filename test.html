@@ -102,7 +102,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{padding:5px 4px;b
 <div id="me" hidden></div>
 <script>
 var DATA = /*__DATA__*/[];
-var CFG = {"appName": "おぼえるドリル", "classes": ["1J1", "1J2", "1J3", "1J4", "1C1", "1C2", "1IT1", "1IT2", "2J1", "2J2", "2J3", "2J4", "2C1", "2C2", "2IT1", "2IT2"], "idDigits": 8, "exam": {"date": "2026-12-06", "label": "2026年12月", "sectionMinPct": 32, "riskMemPct": 40, "goalPct": 75}, "practiceSize": 10, "mock": {"size": 20, "minutes": 15}, "appUrl": "", "backend": "none", "formsUrl": "", "teacher": {"weeklyTargetMin": 120, "idleDays": 3}, "points": {"correct": 10, "wrong": 3, "levels": [0, 100, 250, 500, 900, 1500, 2300, 3300, 4600, 6200, 8200]}, "mockGate": {"lessons": {"goi": 0, "bunpo": 0, "kanji": 0}}, "lessonPass": 0.8, "plan": {"bufferDays": 14, "target": 0.5, "minPerLesson": 10}, "testMode": true, "enc": {"salt": "ddcb15a525de719b0ff38d1a08057b11", "it": 600000, "chk": "W0NNdHigO8hENQ58sggGnhFnzlm6XWg0waGVlXr5l0whBg==", "cv": "c212bb3e"}};
+var CFG = {"appName": "おぼえるドリル", "classes": ["1J1", "1J2", "1J3", "1J4", "1C1", "1C2", "1IT1", "1IT2", "2J1", "2J2", "2J3", "2J4", "2C1", "2C2", "2IT1", "2IT2"], "idDigits": 8, "exam": {"date": "2026-12-06", "label": "2026年12月", "sectionMinPct": 32, "riskMemPct": 40, "goalPct": 75}, "practiceSize": 10, "mock": {"size": 20, "minutes": 15}, "appUrl": "", "backend": "none", "formsUrl": "", "teacher": {"weeklyTargetMin": 120, "idleDays": 3}, "points": {"correct": 10, "wrong": 3, "levels": [0, 100, 250, 500, 900, 1500, 2300, 3300, 4600, 6200, 8200]}, "mockGate": {"lessons": {"goi": 0, "bunpo": 0, "kanji": 0}}, "lessonPass": 0.8, "plan": {"bufferDays": 14, "target": 0.5, "minPerLesson": 10}, "testMode": true, "enc": {"salt": "1349559fd505169fe9a7cd8973d214fe", "it": 600000, "chk": "x7QMd122mE8wy/PuMXcFJsgGWOgZrKsaTiJYvSOHeTO5dA==", "cv": "c0f5e0e5", "num": true, "len": 12}};
 var MOCK = /*__MOCK__*/{};
 var CARDS = /*__CARDS__*/[];
 var LESSONS = /*__LESSONS__*/{};   // {レッスンid: {s:科目, no:番号, t:タイトル}}
@@ -414,8 +414,8 @@ function viewLogin(err, keepC, keepS) {
     '<div class="card"><label>' + T('{クラス|くらす}') + '</label><select id="cls">' +
     CFG.classes.map(function (c) { return '<option' + (c === lc ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select>' +
     '<label>' + T('学籍番号（' + CFG.idDigits + 'けた）') + '</label><input id="s4" inputmode="numeric" maxlength="' + CFG.idDigits + '" value="' + ls + '" placeholder="' + '0'.repeat(CFG.idDigits) + '">' +
-    (needPw ? '<label>' + T('パスワード') + '</label><input id="pw" type="text" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="例：kemuba-sotari-hunode">' +
-      '<div class="sub">' + T('パスワードは、{先生|せんせい}に おしえて もらいます。{大文字|おおもじ}・{小文字|こもじ}や、ハイフン（-）は、どちらでも だいじょうぶです。') + '</div>' : '') +
+    (needPw ? '<label>' + T('パスワード') + '</label><input id="pw" type="text" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false"' + (CFG.enc.num ? ' inputmode="numeric" placeholder="' + '0'.repeat(CFG.enc.len || 12) + '"' : ' placeholder="例：kemuba-sotari-hunode"') + '>' +
+      '<div class="sub">' + (CFG.enc.num ? T('パスワードは、{先生|せんせい}に おしえて もらいます（{数字|すうじ} ') + (CFG.enc.len || 12) + T('けた）。') : T('パスワードは、{先生|せんせい}に おしえて もらいます。{大文字|おおもじ}・{小文字|こもじ}や、ハイフン（-）は、どちらでも だいじょうぶです。')) + '</div>' : '') +
     (err ? '<div class="err">' + T(err) + '</div>' : '') +
     '<button class="btn pri" id="go">' + T('はじめる') + '</button>' +
     '<div class="sub">' + T('{名前|なまえ}は {入力|にゅうりょく}しません。') + '</div></div>';
