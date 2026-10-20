@@ -102,7 +102,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{padding:5px 4px;b
 <div id="me" hidden></div>
 <script>
 var DATA = /*__DATA__*/[];
-var CFG = {"appName": "おぼえるドリル", "classes": ["1J1", "1J2", "1J3", "1J4", "1C1", "1C2", "1IT1", "1IT2", "2J1", "2J2", "2J3", "2J4", "2C1", "2C2", "2IT1", "2IT2"], "idDigits": 8, "exam": {"date": "2026-12-06", "label": "2026年12月", "sectionMinPct": 32, "riskMemPct": 40, "goalPct": 75}, "practiceSize": 10, "mock": {"size": 20, "minutes": 15}, "appUrl": "", "backend": "none", "formsUrl": "", "teacher": {"weeklyTargetMin": 120, "idleDays": 3}, "points": {"correct": 10, "wrong": 3, "levels": [0, 100, 250, 500, 900, 1500, 2300, 3300, 4600, 6200, 8200]}, "mockGate": {"lessons": {"goi": 0, "bunpo": 0, "kanji": 0}}, "lessonPass": 0.8, "plan": {"bufferDays": 14, "target": 0.5, "minPerLesson": 10}, "testMode": true, "enc": {"salt": "1349559fd505169fe9a7cd8973d214fe", "it": 600000, "chk": "x7QMd122mE8wy/PuMXcFJsgGWOgZrKsaTiJYvSOHeTO5dA==", "cv": "c0f5e0e5", "num": true, "len": 12}};
+var CFG = {"appName": "おぼえるドリル", "classes": ["1J1", "1J2", "1J3", "1J4", "1C1", "1C2", "1IT1", "1IT2", "2J1", "2J2", "2J3", "2J4", "2C1", "2C2", "2IT1", "2IT2"], "idDigits": 8, "exam": {"date": "2026-12-06", "label": "2026年12月", "sectionMinPct": 32, "riskMemPct": 40, "goalPct": 75}, "practiceSize": 10, "mock": {"size": 20, "minutes": 15}, "appUrl": "", "backend": "none", "formsUrl": "", "teacher": {"weeklyTargetMin": 120, "idleDays": 3}, "points": {"correct": 10, "wrong": 3, "levels": [0, 100, 250, 500, 900, 1500, 2300, 3300, 4600, 6200, 8200]}, "mockGate": {"lessons": {"goi": 0, "bunpo": 0, "kanji": 0}}, "lessonPass": 0.8, "plan": {"bufferDays": 14, "target": 0.5, "minPerLesson": 10}, "testMode": true, "enc": {"salt": "1349559fd505169fe9a7cd8973d214fe", "it": 600000, "chk": "RPJY1beLBJAF1Vjliu77iztLKMFZqva/FP6BAx0YFgRUrg==", "cv": "c9539d02", "num": true, "len": 12}};
 var MOCK = /*__MOCK__*/{};
 var CARDS = /*__CARDS__*/[];
 var LESSONS = /*__LESSONS__*/{};   // {レッスンid: {s:科目, no:番号, t:タイトル}}
@@ -383,12 +383,12 @@ function checkKey(raw) { var c = b64d(CFG.enc.chk); return aesOpen(raw, c.slice(
 function gunzipJson(buf) { return new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text().then(JSON.parse); }
 function decryptBlob(buf) { var u = new Uint8Array(buf); return aesOpen(CRAW, u.slice(0, 12), u.slice(12)).then(gunzipJson); }
 function setContent(c) { DATA = c.D; MOCK = c.M; CARDS = c.C; LESSONS = c.L; ITEM = {}; DATA.forEach(function (d) { ITEM[d.id] = d; }); CONTENT_OK = true; }
-function loadContent() {
+function loadContent(bust) {
   return new Promise(function (res) {
-    getJson('content.enc', function (buf) {
-      if (!buf) return res('net');
-      decryptBlob(buf).then(function (c) { setContent(c); res('ok'); }, function () { res('bad'); });
-    }, true, true);
+    getJson('content.enc', function (buf, why) {
+      if (!buf) return bust ? res('net:' + why) : res(loadContent(true));
+      decryptBlob(buf).then(function (c) { setContent(c); res('ok'); }, function () { res(bust ? 'bad' : loadContent(true)); });
+    }, true, true, bust);
   });
 }
 function unlock(pw) {   // → 'ok'（ひらけた）／'pw'（パスワードがちがう）／'net'（読みこめない）／'nocrypto'
@@ -399,7 +399,7 @@ function unlock(pw) {   // → 'ok'（ひらけた）／'pw'（パスワード�
     return checkKey(raw).then(function (ok) {
       if (!ok) { if (!pw) forgetKey(); return 'pw'; }
       CRAW = raw;
-      return loadContent().then(function (r) { if (r === 'ok') rememberKey(raw); return r; });
+      return loadContent(false).then(function (r) { if (r === 'ok') rememberKey(raw); return r; });
     });
   }, function () { return 'pw'; });
 }
@@ -434,7 +434,7 @@ function viewLogin(err, keepC, keepS) {
     var btn = document.getElementById('go'); btn.disabled = true; btn.textContent = '…';
     unlock(needPw ? pw : null).then(function (r) {
       if (r === 'ok') return start();
-      viewLogin(r === 'pw' ? (needPw ? 'パスワードが ちがいます。もういちど 入力してください。' : 'あたらしい パスワードを 入力してください。') : r === 'nocrypto' ? 'この ブラウザでは つかえません。Safari（iPhone）か Chrome（Android）で ひらいてください。' : 'つうしんが できません。インターネットに つながっているか みてください。', c, s);
+      viewLogin(r === 'pw' ? (needPw ? 'パスワードが ちがいます。もういちど 入力してください。' : 'あたらしい パスワードを 入力してください。') : r === 'nocrypto' ? 'この ブラウザでは つかえません。Safari（iPhone）か Chrome（Android）で ひらいてください。' : r === 'bad' ? 'データを ひらけませんでした。ブラウザを いちど とじて、もういちど ひらいてください。（コード：bad）' : 'つうしんが できません。インターネットに つながっているか みてください。（コード：' + String(r).replace(/^net:/, '') + '）', c, s);
     });
   };
 }
@@ -466,11 +466,12 @@ function minutes(s) { return Math.max(1, Math.round((s.end - s.login) / 60000));
 
 /* ---------- 同じ場所の json ファイルを「読むだけ」（ranking.json / notice.json）。記録は送らない ---------- */
 var TRV = (CFG.enc && CFG.enc.cv) || 'r1';   // 中身・翻訳ファイルの版（変えると読み直す）
-function getJson(name, cb, always, bin) {
-  if (TEST && !always) return cb(null);
+function getJson(name, cb, always, bin, bust) {
+  if (TEST && !always) return cb(null, 'test');
+  var why = '';
   try {
-    fetch(name + '?' + (always ? 'v=' + TRV : Date.now()), always ? {} : { cache: 'no-store' }).then(function (r) { return r.ok ? (bin ? r.arrayBuffer() : r.json()) : null; }).then(function (j) { cb(j); }).catch(function () { cb(null); });
-  } catch (e) { cb(null); }
+    fetch(name + '?' + (always ? 'v=' + TRV : Date.now()) + (bust ? '&r=' + Date.now() : ''), bust ? { cache: 'reload' } : (always ? {} : { cache: 'no-store' })).then(function (r) { if (!r.ok) { why = 'http' + r.status; return null; } return bin ? r.arrayBuffer() : r.json(); }).then(function (j) { cb(j, why); }).catch(function () { cb(null, why || 'fetch'); });
+  } catch (e) { cb(null, 'error'); }
 }
 
 /* 先生からのお知らせ（notice.json）。読んだら、そのお知らせは出さない */
