@@ -1,5 +1,5 @@
 /* おぼえるドリル：2回目からすぐ開く・電波が弱くても使えるようにする（記録の送信には通信が要る） */
-var VER = 'obo-20261020164533';
+var VER = 'obo-20261020170513';
 var CORE = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'favicon-32.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(VER).then(function (c) { return c.addAll(CORE); }).then(function () { return self.skipWaiting(); }));
@@ -10,7 +10,7 @@ self.addEventListener('activate', function (e) {
 self.addEventListener('fetch', function (e) {
   var u = new URL(e.request.url);
   if (e.request.method !== 'GET' || u.origin !== location.origin) return;
-  if (/(tr_(en|vi)\.json|\.enc)$/.test(u.pathname)) {   // 翻訳：いちど読みこんだら、版（?v=）が同じあいだは通信しない
+  if (/pack_(c|en|vi)\.json$/.test(u.pathname)) {   // 翻訳：いちど読みこんだら、版（?v=）が同じあいだは通信しない
     e.respondWith(caches.open('obo-tr').then(function (c) { return c.match(e.request).then(function (hit) { return hit || fetch(e.request).then(function (r) { if (r && r.ok) { c.put(e.request, r.clone()); c.keys().then(function (ks) { ks.forEach(function (k) { if (new URL(k.url).pathname === u.pathname && k.url !== e.request.url) c.delete(k); }); }); } return r; }); }); }));
     return;
   }
