@@ -102,7 +102,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{padding:5px 4px;b
 <div id="me" hidden></div>
 <script>
 var DATA = /*__DATA__*/[];
-var CFG = {"appName": "おぼえるドリル", "classes": ["1J1", "1J2", "1J3", "1J4", "1C1", "1C2", "1IT1", "1IT2", "2J1", "2J2", "2J3", "2J4", "2C1", "2C2", "2IT1", "2IT2"], "idDigits": 8, "exam": {"date": "2026-12-06", "label": "2026年12月", "sectionMinPct": 32, "riskMemPct": 40, "goalPct": 75}, "practiceSize": 10, "mock": {"size": 20, "minutes": 15}, "appUrl": "https://wakayamacomputer.github.io/obo-drill/", "backend": "forms", "formsUrl": "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=WY5HKNvbwUa5G9SfM72L5srtmmj2W8lMjz40rjLNHnRUOEtTM01NUkxLQzBaTjAwTUVVVUdTQjhCOS4u&rb7394617033643b49014ad2468c66648={class}&r9b66feb34d3841c4a73dd85e6c26eaef={s4}&r47bc326348b54aa3b71a86ed14255342={session}&ra2a693963e144062960c3843f8993856={code}", "teacher": {"weeklyTargetMin": 120, "idleDays": 3}, "points": {"correct": 10, "wrong": 3, "levels": [0, 100, 250, 500, 900, 1500, 2300, 3300, 4600, 6200, 8200]}, "mockGate": {"lessons": {"goi": 3, "bunpo": 3, "kanji": 3}}, "lessonPass": 0.8, "plan": {"bufferDays": 14, "target": 0.5, "minPerLesson": 10}, "enc": {"salt": "1349559fd505169fe9a7cd8973d214fe", "it": 600000, "chk": "KaCKY6g3cdh7A8hlWSCRxeDTI3TSLdOJL2P8dOBKGNweIg==", "cv": "c072f198", "num": true, "len": 12}};
+var CFG = {"appName": "おぼえるドリル", "classes": ["1J1", "1J2", "1J3", "1J4", "1C1", "1C2", "1IT1", "1IT2", "2J1", "2J2", "2J3", "2J4", "2C1", "2C2", "2IT1", "2IT2"], "idDigits": 8, "exam": {"date": "2026-12-06", "label": "2026年12月", "sectionMinPct": 32, "riskMemPct": 40, "goalPct": 75}, "practiceSize": 10, "mock": {"size": 20, "minutes": 15}, "appUrl": "https://wakayamacomputer.github.io/obo-drill/", "backend": "forms", "formsUrl": "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=WY5HKNvbwUa5G9SfM72L5srtmmj2W8lMjz40rjLNHnRUOEtTM01NUkxLQzBaTjAwTUVVVUdTQjhCOS4u&rb7394617033643b49014ad2468c66648={class}&r9b66feb34d3841c4a73dd85e6c26eaef={s4}&r47bc326348b54aa3b71a86ed14255342={session}&ra2a693963e144062960c3843f8993856={code}", "teacher": {"weeklyTargetMin": 120, "idleDays": 3}, "points": {"correct": 10, "wrong": 3, "levels": [0, 100, 250, 500, 900, 1500, 2300, 3300, 4600, 6200, 8200]}, "mockGate": {"lessons": {"goi": 3, "bunpo": 3, "kanji": 3}}, "lessonPass": 0.8, "plan": {"bufferDays": 14, "target": 0.5, "minPerLesson": 10}, "enc": {"salt": "1349559fd505169fe9a7cd8973d214fe", "it": 600000, "chk": "4hKyGjhqBAC0e8/8iMazeLqmn6slsp0ER8ZGUP9jkhQgxw==", "cv": "ce8b729b", "num": true, "len": 12}};
 var MOCK = /*__MOCK__*/{};
 var CARDS = /*__CARDS__*/[];
 var LESSONS = /*__LESSONS__*/{};   // {レッスンid: {s:科目, no:番号, t:タイトル}}
@@ -743,7 +743,7 @@ function bindHs() {
 
 function heroCard() {
   var cleared = 0; LESSON_SUBJ.forEach(function (sj) { lessonList(sj[0]).forEach(function (x) { if (lessonState(x.id).cleared) cleared++; }); });
-  if (cleared > 0) return '';
+  if (cleared > 0 || hasProgress()) return '';   // 1問でも答えた人（記録がある人）には出さない
   var gl = lessonList('goi'); if (!gl.length) return '';
   var first = gl[0].id, nm = lessonName(first);
   return '<div class="card hero"><h2>👉 ' + T('ここから はじめよう！') + ' <span class="sub">Start here! / <span lang="vi">Bắt đầu từ đây!</span></span></h2><ol>' +
