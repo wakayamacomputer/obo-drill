@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>おぼえるドリル 先生（スマホ）</title>
+<style>
+:root{--navy:#1F3864;--red:#C45911;--bg:#f5f6fa;--card:#fff;--fg:#1b1f2a;--sub:#5a6272;--line:#d9dde6;--weak:#c62828;--mid:#d98a00;--good:#2e7d32}
+@media (prefers-color-scheme:dark){:root{--bg:#10141c;--card:#1a2030;--fg:#e8ebf2;--sub:#a3acc0;--line:#2e3650;--navy:#8fb0ff;--red:#ff9a5c;--weak:#ef5350;--mid:#ffb74d;--good:#66bb6a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,"Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;-webkit-text-size-adjust:100%}
+#app{max-width:640px;margin:0 auto;padding:12px 16px 60px}
+h1{font-size:20px;color:var(--navy);margin:6px 0}h2{font-size:17px;color:var(--navy);margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0}
+.btn{display:inline-block;padding:12px 18px;border:2px solid var(--navy);border-radius:10px;background:var(--card);color:var(--navy);font:inherit;font-weight:700;margin:4px 4px 4px 0}
+.btn.pri{background:var(--navy);color:#fff}.btn.sm{padding:8px 12px;font-size:14px}
+select,input[type=text]{font:inherit;font-size:16px;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);max-width:100%}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;text-align:center}.kpi b{display:block;font-size:24px;color:var(--navy)}.kpi span{font-size:12px;color:var(--sub)}
+.sub{color:var(--sub);font-size:14px}.err{color:var(--weak);font-weight:700}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.stu{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
+.stu .nm{font-weight:700;font-size:17px}
+.chip{display:inline-block;border-radius:999px;padding:0 10px;font-size:13px;font-weight:700;color:#fff;background:#8a93a6;margin-left:4px}
+.chip.good{background:var(--good)}.chip.mid{background:var(--mid)}.chip.weak{background:var(--weak)}
+.nums{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:2px;font-size:15px}.nums b{font-size:17px}
+.chart{display:flex;align-items:flex-end;gap:3px;height:90px;border-bottom:1px solid var(--line);padding-top:16px}
+.chart div{flex:1;border-radius:3px 3px 0 0;min-height:2px;position:relative;background:var(--navy)}
+.chart div span{position:absolute;top:-15px;left:-4px;right:-4px;text-align:center;font-size:10px;color:var(--sub)}
+.lbl{display:flex;gap:3px}.lbl div{flex:1;text-align:center;font-size:10px;color:var(--sub)}
+table{border-collapse:collapse;width:100%}th,td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--sub);font-weight:700;font-size:13px}
+.bar{height:10px;background:var(--line);border-radius:5px}.bar>i{display:block;height:100%;border-radius:5px;background:var(--good)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+var CFG = {"appName": "おぼえるドリル", "classes": ["1J1", "1J2", "1J3", "1J4", "1C1", "1C2", "1IT1", "1IT2", "2J1", "2J2", "2J3", "2J4", "2C1", "2C2", "2IT1", "2IT2"], "idDigits": 8, "exam": {"date": "2026-12-06", "label": "2026年12月", "sectionMinPct": 32, "riskMemPct": 40, "goalPct": 75}, "practiceSize": 10, "mock": {"size": 20, "minutes": 15}, "appUrl": "https://wakayamacomputer.github.io/obo-drill/", "backend": "forms", "teacher": {"weeklyTargetMin": 120, "idleDays": 3}, "points": {"correct": 10, "wrong": 3, "levels": [0, 100, 250, 500, 900, 1500, 2300, 3300, 4600, 6200, 8200]}, "mockGate": {"lessons": {"goi": 3, "bunpo": 3, "kanji": 3}}, "lessonPass": 0.8, "plan": {"bufferDays": 14, "target": 0.15, "okRatio": 0.8, "closeRatio": 0.4, "minPerLesson": 10}};
+var LESSONS = {"語彙 Lesson 1": {"s": "goi", "no": 1, "t": "時間①"}, "語彙 Lesson 2": {"s": "goi", "no": 2, "t": "時間②"}, "語彙 Lesson 3": {"s": "goi", "no": 3, "t": "時間③"}, "語彙 Lesson 4": {"s": "goi", "no": 4, "t": "時間④"}, "語彙 Lesson 5": {"s": "goi", "no": 5, "t": "家①"}, "語彙 Lesson 6": {"s": "goi", "no": 6, "t": "家②"}, "語彙 Lesson 7": {"s": "goi", "no": 7, "t": "家③"}, "語彙 Lesson 8": {"s": "goi", "no": 8, "t": "お金①"}, "語彙 Lesson 9": {"s": "goi", "no": 9, "t": "お金②"}, "語彙 Lesson 10": {"s": "goi", "no": 10, "t": "お金③"}, "語彙 Lesson 11": {"s": "goi", "no": 11, "t": "お金④"}, "語彙 Lesson 12": {"s": "goi", "no": 12, "t": "数・量①"}, "語彙 Lesson 13": {"s": "goi", "no": 13, "t": "数・量②"}, "語彙 Lesson 14": {"s": "goi", "no": 14, "t": "数・量③"}, "語彙 Lesson 15": {"s": "goi", "no": 15, "t": "数・量④"}, "語彙 Lesson 16": {"s": "goi", "no": 16, "t": "国・社会①"}, "語彙 Lesson 17": {"s": "goi", "no": 17, "t": "国・社会②"}, "語彙 Lesson 18": {"s": "goi", "no": 18, "t": "国・社会③"}, "語彙 Lesson 19": {"s": "goi", "no": 19, "t": "国・社会④"}, "語彙 Lesson 20": {"s": "goi", "no": 20, "t": "産業・技術①"}, "語彙 Lesson 21": {"s": "goi", "no": 21, "t": "産業・技術②"}, "語彙 Lesson 22": {"s": "goi", "no": 22, "t": "産業・技術③"}, "語彙 Lesson 23": {"s": "goi", "no": 23, "t": "自然①"}, "語彙 Lesson 24": {"s": "goi", "no": 24, "t": "自然②"}, "語彙 Lesson 25": {"s": "goi", "no": 25, "t": "自然③"}, "語彙 Lesson 26": {"s": "goi", "no": 26, "t": "自然④"}, "語彙 Lesson 27": {"s": "goi", "no": 27, "t": "体・健康①"}, "語彙 Lesson 28": {"s": "goi", "no": 28, "t": "体・健康②"}, "語彙 Lesson 29": {"s": "goi", "no": 29, "t": "体・健康③"}, "語彙 Lesson 30": {"s": "goi", "no": 30, "t": "体・健康④"}, "語彙 Lesson 31": {"s": "goi", "no": 31, "t": "交通①"}, "語彙 Lesson 32": {"s": "goi", "no": 32, "t": "交通②"}, "語彙 Lesson 33": {"s": "goi", "no": 33, "t": "交通③"}, "語彙 Lesson 34": {"s": "goi", "no": 34, "t": "交通④"}, "語彙 Lesson 35": {"s": "goi", "no": 35, "t": "位置・方向①"}, "語彙 Lesson 36": {"s": "goi", "no": 36, "t": "位置・方向②"}, "語彙 Lesson 37": {"s": "goi", "no": 37, "t": "趣味・活動①"}, "語彙 Lesson 38": {"s": "goi", "no": 38, "t": "趣味・活動②"}, "語彙 Lesson 39": {"s": "goi", "no": 39, "t": "趣味・活動③"}, "語彙 Lesson 40": {"s": "goi", "no": 40, "t": "学校・学問①"}, "語彙 Lesson 41": {"s": "goi", "no": 41, "t": "学校・学問②"}, "語彙 Lesson 42": {"s": "goi", "no": 42, "t": "学校・学問③"}, "語彙 Lesson 43": {"s": "goi", "no": 43, "t": "学校・学問④"}, "語彙 Lesson 44": {"s": "goi", "no": 44, "t": "仕事①①"}, "語彙 Lesson 45": {"s": "goi", "no": 45, "t": "仕事①②"}, "語彙 Lesson 46": {"s": "goi", "no": 46, "t": "仕事①③"}, "語彙 Lesson 47": {"s": "goi", "no": 47, "t": "仕事②①"}, "語彙 Lesson 48": {"s": "goi", "no": 48, "t": "仕事②②"}, "語彙 Lesson 49": {"s": "goi", "no": 49, "t": "仕事②③"}, "語彙 Lesson 50": {"s": "goi", "no": 50, "t": "仕事②④"}, "語彙 Lesson 51": {"s": "goi", "no": 51, "t": "能力・評価①"}, "語彙 Lesson 52": {"s": "goi", "no": 52, "t": "能力・評価②"}, "語彙 Lesson 53": {"s": "goi", "no": 53, "t": "能力・評価③"}, "語彙 Lesson 54": {"s": "goi", "no": 54, "t": "能力・評価④"}, "語彙 Lesson 55": {"s": "goi", "no": 55, "t": "パソコン・プリンターなど①"}, "語彙 Lesson 56": {"s": "goi", "no": 56, "t": "パソコン・プリンターなど②"}, "語彙 Lesson 57": {"s": "goi", "no": 57, "t": "パソコン・プリンターなど③"}, "語彙 Lesson 58": {"s": "goi", "no": 58, "t": "表・グラフ①"}, "語彙 Lesson 59": {"s": "goi", "no": 59, "t": "表・グラフ②"}, "語彙 Lesson 60": {"s": "goi", "no": 60, "t": "表・グラフ③"}, "語彙 Lesson 61": {"s": "goi", "no": 61, "t": "表・グラフ④"}, "語彙 Lesson 62": {"s": "goi", "no": 62, "t": "どんな気持ち？①"}, "語彙 Lesson 63": {"s": "goi", "no": 63, "t": "どんな気持ち？②"}, "語彙 Lesson 64": {"s": "goi", "no": 64, "t": "どんな気持ち？③"}, "語彙 Lesson 65": {"s": "goi", "no": 65, "t": "どんな気持ち？④"}, "語彙 Lesson 66": {"s": "goi", "no": 66, "t": "人と人①"}, "語彙 Lesson 67": {"s": "goi", "no": 67, "t": "人と人②"}, "語彙 Lesson 68": {"s": "goi", "no": 68, "t": "人と人③"}, "語彙 Lesson 69": {"s": "goi", "no": 69, "t": "人と人④"}, "語彙 Lesson 70": {"s": "goi", "no": 70, "t": "言葉のいろいろな形①"}, "語彙 Lesson 71": {"s": "goi", "no": 71, "t": "言葉のいろいろな形②"}, "語彙 Lesson 72": {"s": "goi", "no": 72, "t": "言葉のいろいろな形③"}, "語彙 Lesson 73": {"s": "goi", "no": 73, "t": "言葉のいろいろな形④"}, "語彙 Lesson 74": {"s": "goi", "no": 74, "t": "意味が似ている言葉①①"}, "語彙 Lesson 75": {"s": "goi", "no": 75, "t": "意味が似ている言葉①②"}, "語彙 Lesson 76": {"s": "goi", "no": 76, "t": "意味が似ている言葉①③"}, "語彙 Lesson 77": {"s": "goi", "no": 77, "t": "意味が似ている言葉②①"}, "語彙 Lesson 78": {"s": "goi", "no": 78, "t": "意味が似ている言葉②②"}, "語彙 Lesson 79": {"s": "goi", "no": 79, "t": "意味が似ている言葉②③"}, "語彙 Lesson 80": {"s": "goi", "no": 80, "t": "意味が似ている言葉②④"}, "語彙 Lesson 81": {"s": "goi", "no": 81, "t": "反対の意味の言葉など①"}, "語彙 Lesson 82": {"s": "goi", "no": 82, "t": "反対の意味の言葉など②"}, "語彙 Lesson 83": {"s": "goi", "no": 83, "t": "反対の意味の言葉など③"}, "語彙 Lesson 84": {"s": "goi", "no": 84, "t": "反対の意味の言葉など④"}, "語彙 Lesson 85": {"s": "goi", "no": 85, "t": "音が同じ言葉①"}, "語彙 Lesson 86": {"s": "goi", "no": 86, "t": "音が同じ言葉②"}, "語彙 Lesson 87": {"s": "goi", "no": 87, "t": "音が同じ言葉③"}, "語彙 Lesson 88": {"s": "goi", "no": 88, "t": "音が同じ言葉④"}, "語彙 Lesson 89": {"s": "goi", "no": 89, "t": "同じ漢字を持つ言葉①"}, "語彙 Lesson 90": {"s": "goi", "no": 90, "t": "同じ漢字を持つ言葉②"}, "語彙 Lesson 91": {"s": "goi", "no": 91, "t": "同じ漢字を持つ言葉③"}, "語彙 Lesson 92": {"s": "goi", "no": 92, "t": "同じ漢字を持つ言葉④"}, "語彙 Lesson 93": {"s": "goi", "no": 93, "t": "同じ漢字を持つ言葉⑤"}, "語彙 Lesson 94": {"s": "goi", "no": 94, "t": "副詞①"}, "語彙 Lesson 95": {"s": "goi", "no": 95, "t": "副詞②"}, "語彙 Lesson 96": {"s": "goi", "no": 96, "t": "副詞③"}, "語彙 Lesson 97": {"s": "goi", "no": 97, "t": "副詞④"}, "語彙 Lesson 98": {"s": "goi", "no": 98, "t": "副詞⑤"}, "語彙 Lesson 99": {"s": "goi", "no": 99, "t": "形容詞①（どんな人？）①"}, "語彙 Lesson 100": {"s": "goi", "no": 100, "t": "形容詞①（どんな人？）②"}, "語彙 Lesson 101": {"s": "goi", "no": 101, "t": "形容詞①（どんな人？）③"}, "語彙 Lesson 102": {"s": "goi", "no": 102, "t": "形容詞②（どんなもの・こと？）①"}, "語彙 Lesson 103": {"s": "goi", "no": 103, "t": "形容詞②（どんなもの・こと？）②"}, "語彙 Lesson 104": {"s": "goi", "no": 104, "t": "動詞①①"}, "語彙 Lesson 105": {"s": "goi", "no": 105, "t": "動詞①②"}, "語彙 Lesson 106": {"s": "goi", "no": 106, "t": "動詞①③"}, "語彙 Lesson 107": {"s": "goi", "no": 107, "t": "動詞①④"}, "語彙 Lesson 108": {"s": "goi", "no": 108, "t": "動詞②①"}, "語彙 Lesson 109": {"s": "goi", "no": 109, "t": "動詞②②"}, "語彙 Lesson 110": {"s": "goi", "no": 110, "t": "動詞②③"}, "語彙 Lesson 111": {"s": "goi", "no": 111, "t": "動詞②④"}, "語彙 Lesson 112": {"s": "goi", "no": 112, "t": "いろいろな意味のある動詞①①"}, "語彙 Lesson 113": {"s": "goi", "no": 113, "t": "いろいろな意味のある動詞①②"}, "語彙 Lesson 114": {"s": "goi", "no": 114, "t": "いろいろな意味のある動詞①③"}, "語彙 Lesson 115": {"s": "goi", "no": 115, "t": "いろいろな意味のある動詞②①"}, "語彙 Lesson 116": {"s": "goi", "no": 116, "t": "いろいろな意味のある動詞②②"}, "語彙 Lesson 117": {"s": "goi", "no": 117, "t": "いろいろな意味のある動詞②③"}, "語彙 Lesson 118": {"s": "goi", "no": 118, "t": "動詞＋動詞（複合動詞）①"}, "語彙 Lesson 119": {"s": "goi", "no": 119, "t": "動詞＋動詞（複合動詞）②"}, "語彙 Lesson 120": {"s": "goi", "no": 120, "t": "動詞＋動詞（複合動詞）③"}, "語彙 Lesson 121": {"s": "goi", "no": 121, "t": "「〜する」の形の動詞①①"}, "語彙 Lesson 122": {"s": "goi", "no": 122, "t": "「〜する」の形の動詞①②"}, "語彙 Lesson 123": {"s": "goi", "no": 123, "t": "「〜する」の形の動詞①③"}, "語彙 Lesson 124": {"s": "goi", "no": 124, "t": "「〜する」の形の動詞①④"}, "語彙 Lesson 125": {"s": "goi", "no": 125, "t": "「〜する」の形の動詞②①"}, "語彙 Lesson 126": {"s": "goi", "no": 126, "t": "「〜する」の形の動詞②②"}, "語彙 Lesson 127": {"s": "goi", "no": 127, "t": "「〜する」の形の動詞②③"}, "語彙 Lesson 128": {"s": "goi", "no": 128, "t": "「〜する」の形の動詞②④"}, "語彙 Lesson 129": {"s": "goi", "no": 129, "t": "「〜する」の形の動詞③①"}, "語彙 Lesson 130": {"s": "goi", "no": 130, "t": "「〜する」の形の動詞③②"}, "語彙 Lesson 131": {"s": "goi", "no": 131, "t": "「〜する」の形の動詞③③"}, "語彙 Lesson 132": {"s": "goi", "no": 132, "t": "カタカナの言葉①①"}, "語彙 Lesson 133": {"s": "goi", "no": 133, "t": "カタカナの言葉①②"}, "語彙 Lesson 134": {"s": "goi", "no": 134, "t": "カタカナの言葉①③"}, "語彙 Lesson 135": {"s": "goi", "no": 135, "t": "カタカナの言葉①④"}, "語彙 Lesson 136": {"s": "goi", "no": 136, "t": "カタカナの言葉②①"}, "語彙 Lesson 137": {"s": "goi", "no": 137, "t": "カタカナの言葉②②"}, "語彙 Lesson 138": {"s": "goi", "no": 138, "t": "カタカナの言葉②③"}, "語彙 Lesson 139": {"s": "goi", "no": 139, "t": "カタカナの言葉②④"}, "語彙 Lesson 140": {"s": "goi", "no": 140, "t": "カタカナの言葉③①"}, "語彙 Lesson 141": {"s": "goi", "no": 141, "t": "カタカナの言葉③②"}, "語彙 Lesson 142": {"s": "goi", "no": 142, "t": "カタカナの言葉③③"}, "語彙 Lesson 143": {"s": "goi", "no": 143, "t": "慣用句①"}, "語彙 Lesson 144": {"s": "goi", "no": 144, "t": "慣用句②"}, "語彙 Lesson 145": {"s": "goi", "no": 145, "t": "慣用句③"}, "語彙 Lesson 146": {"s": "goi", "no": 146, "t": "慣用句④"}, "語彙 Lesson 147": {"s": "goi", "no": 147, "t": "擬音語・擬態語①"}, "語彙 Lesson 148": {"s": "goi", "no": 148, "t": "擬音語・擬態語②"}, "語彙 Lesson 149": {"s": "goi", "no": 149, "t": "つなぎ言葉①"}, "語彙 Lesson 150": {"s": "goi", "no": 150, "t": "つなぎ言葉②"}, "語彙 Lesson 151": {"s": "goi", "no": 151, "t": "つなぎ言葉③"}, "語彙 Lesson 152": {"s": "goi", "no": 152, "t": "短い言葉①"}, "語彙 Lesson 153": {"s": "goi", "no": 153, "t": "短い言葉②"}, "語彙 Lesson 154": {"s": "goi", "no": 154, "t": "短い言葉③"}, "語彙 Lesson 155": {"s": "goi", "no": 155, "t": "その他いろいろ①"}, "語彙 Lesson 156": {"s": "goi", "no": 156, "t": "その他いろいろ②"}, "語彙 Lesson 157": {"s": "goi", "no": 157, "t": "その他いろいろ③"}, "語彙 Lesson 158": {"s": "goi", "no": 158, "t": "その他いろいろ④"}, "語彙 Lesson 159": {"s": "goi", "no": 159, "t": "親類・友人・知人（新完全）"}, "語彙 Lesson 160": {"s": "goi", "no": 160, "t": "人の性格・特徴（新完全）"}, "語彙 Lesson 161": {"s": "goi", "no": 161, "t": "人に対する感情・行動（新完全）"}, "語彙 Lesson 162": {"s": "goi", "no": 162, "t": "食生活（新完全）"}, "語彙 Lesson 163": {"s": "goi", "no": 163, "t": "家事（新完全）"}, "語彙 Lesson 164": {"s": "goi", "no": 164, "t": "健康（新完全）"}, "語彙 Lesson 165": {"s": "goi", "no": 165, "t": "趣味・娯楽（新完全）"}, "語彙 Lesson 166": {"s": "goi", "no": 166, "t": "旅行・交通（新完全）"}, "語彙 Lesson 167": {"s": "goi", "no": 167, "t": "自然（新完全）"}, "語彙 Lesson 168": {"s": "goi", "no": 168, "t": "学校（新完全）"}, "語彙 Lesson 169": {"s": "goi", "no": 169, "t": "仕事（新完全）"}, "語彙 Lesson 170": {"s": "goi", "no": 170, "t": "報道・広告（新完全）"}, "語彙 Lesson 171": {"s": "goi", "no": 171, "t": "コンピューター（新完全）"}, "語彙 Lesson 172": {"s": "goi", "no": 172, "t": "行事（新完全）"}, "語彙 Lesson 173": {"s": "goi", "no": 173, "t": "事件・事故・災害（新完全）"}, "語彙 Lesson 174": {"s": "goi", "no": 174, "t": "経済・産業（新完全）"}, "語彙 Lesson 175": {"s": "goi", "no": 175, "t": "政治・法律・歴史（新完全）"}, "語彙 Lesson 176": {"s": "goi", "no": 176, "t": "自然科学（新完全）"}, "語彙 Lesson 177": {"s": "goi", "no": 177, "t": "科学・技術（新完全）"}, "語彙 Lesson 178": {"s": "goi", "no": 178, "t": "数量を表す言葉（新完全）"}, "語彙 Lesson 179": {"s": "goi", "no": 179, "t": "時間・空間の言葉（新完全）"}, "語彙 Lesson 180": {"s": "goi", "no": 180, "t": "意味がたくさんある動詞①（新完全）"}, "語彙 Lesson 181": {"s": "goi", "no": 181, "t": "意味がたくさんある動詞②（新完全）"}, "語彙 Lesson 182": {"s": "goi", "no": 182, "t": "意味がたくさんある形容詞・名詞（新完全）"}, "語彙 Lesson 183": {"s": "goi", "no": 183, "t": "意味が似ている副詞・形容詞（新完全）"}, "語彙 Lesson 184": {"s": "goi", "no": 184, "t": "意味が似ている名詞・動詞（新完全）"}, "語彙 Lesson 185": {"s": "goi", "no": 185, "t": "形が似ている言葉（新完全）"}, "語彙 Lesson 186": {"s": "goi", "no": 186, "t": "程度・時間・頻度の副詞（新完全）"}, "語彙 Lesson 187": {"s": "goi", "no": 187, "t": "後ろに決まった表現が来る副詞（新完全）"}, "語彙 Lesson 188": {"s": "goi", "no": 188, "t": "まとめて覚えたい副詞（新完全）"}, "語彙 Lesson 189": {"s": "goi", "no": 189, "t": "オノマトペ（新完全）"}, "語彙 Lesson 190": {"s": "goi", "no": 190, "t": "体の言葉を使った慣用表現①（新完全）"}, "語彙 Lesson 191": {"s": "goi", "no": 191, "t": "体の言葉を使った慣用表現②（新完全）"}, "語彙 Lesson 192": {"s": "goi", "no": 192, "t": "二つの言葉をプラス（新完全）"}, "語彙 Lesson 193": {"s": "goi", "no": 193, "t": "単語の前に漢字をプラス（新完全）"}, "語彙 Lesson 194": {"s": "goi", "no": 194, "t": "単語の後ろに漢字をプラス（新完全）"}, "語彙 Lesson 195": {"s": "goi", "no": 195, "t": "形容詞から作る動詞と名詞（新完全）"}, "文法 Lesson 1": {"s": "bunpo", "no": 1, "t": "際(に) ほか"}, "文法 Lesson 2": {"s": "bunpo", "no": 2, "t": "つつ ほか"}, "文法 Lesson 3": {"s": "bunpo", "no": 3, "t": "限り ほか"}, "文法 Lesson 4": {"s": "bunpo", "no": 4, "t": "上(に) ほか"}, "文法 Lesson 5": {"s": "bunpo", "no": 5, "t": "向けだ ほか"}, "文法 Lesson 6": {"s": "bunpo", "no": 6, "t": "を問わず ほか"}, "文法 Lesson 7": {"s": "bunpo", "no": 7, "t": "とは ほか"}, "文法 Lesson 8": {"s": "bunpo", "no": 8, "t": "としたら・とすれば・とすると・となったら・となれば・となると ほか"}, "文法 Lesson 9": {"s": "bunpo", "no": 9, "t": "につき ほか"}, "文法 Lesson 10": {"s": "bunpo", "no": 10, "t": "得る／得ない ほか"}, "文法 Lesson 11": {"s": "bunpo", "no": 11, "t": "末(に) ほか"}, "文法 Lesson 12": {"s": "bunpo", "no": 12, "t": "かねない ほか"}, "文法 Lesson 13": {"s": "bunpo", "no": 13, "t": "しかない・よりほかない ほか"}, "文法 Lesson 14": {"s": "bunpo", "no": 14, "t": "ないわけには(は)いかない ほか"}, "文法 Lesson 15": {"s": "bunpo", "no": 15, "t": "一方(で) ほか"}, "文法 Lesson 16": {"s": "bunpo", "no": 16, "t": "に先立って ほか"}, "文法 Lesson 17": {"s": "bunpo", "no": 17, "t": "ことなく ほか"}, "文法 Lesson 18": {"s": "bunpo", "no": 18, "t": "にこしたことはない ほか"}, "文法 Lesson 19": {"s": "bunpo", "no": 19, "t": "次第で ほか"}, "漢字 Unit 1-1": {"s": "kanji", "no": 1, "t": "季節"}, "漢字 Unit 1-2": {"s": "kanji", "no": 2, "t": "衣類"}, "漢字 Unit 1-3": {"s": "kanji", "no": 3, "t": "住居"}, "漢字 Unit 1-4": {"s": "kanji", "no": 4, "t": "お菓子"}, "漢字 Unit 1-5": {"s": "kanji", "no": 5, "t": "栄養"}, "漢字 Unit 2-1": {"s": "kanji", "no": 6, "t": "市民芸術祭"}, "漢字 Unit 2-2": {"s": "kanji", "no": 7, "t": "展示会"}, "漢字 Unit 2-3": {"s": "kanji", "no": 8, "t": "旅行"}, "漢字 Unit 2-4": {"s": "kanji", "no": 9, "t": "試合"}, "漢字 Unit 2-5": {"s": "kanji", "no": 10, "t": "スポーツジム"}, "漢字 Unit 3-1": {"s": "kanji", "no": 11, "t": "家族"}, "漢字 Unit 3-2": {"s": "kanji", "no": 12, "t": "ペット"}, "漢字 Unit 3-3": {"s": "kanji", "no": 13, "t": "悩み"}, "漢字 Unit 3-4": {"s": "kanji", "no": 14, "t": "宗教"}, "漢字 Unit 3-5": {"s": "kanji", "no": 15, "t": "敬語"}, "漢字 Unit 3-6": {"s": "kanji", "no": 16, "t": "体"}, "漢字 Unit 4-1": {"s": "kanji", "no": 17, "t": "雇用"}, "漢字 Unit 4-2": {"s": "kanji", "no": 18, "t": "転職"}, "漢字 Unit 4-3": {"s": "kanji", "no": 19, "t": "論文"}, "漢字 Unit 4-4": {"s": "kanji", "no": 20, "t": "寄付"}, "漢字 Unit 4-5": {"s": "kanji", "no": 21, "t": "依頼"}, "漢字 Unit 5-1": {"s": "kanji", "no": 22, "t": "地理"}, "漢字 Unit 5-2": {"s": "kanji", "no": 23, "t": "資源"}, "漢字 Unit 5-3": {"s": "kanji", "no": 24, "t": "環境"}, "漢字 Unit 5-4": {"s": "kanji", "no": 25, "t": "農業"}, "漢字 Unit 5-5": {"s": "kanji", "no": 26, "t": "台風"}, "漢字 Unit 6-1": {"s": "kanji", "no": 27, "t": "防災訓練"}, "漢字 Unit 6-2": {"s": "kanji", "no": 28, "t": "火災"}, "漢字 Unit 6-3": {"s": "kanji", "no": 29, "t": "交通トラブル"}, "漢字 Unit 6-4": {"s": "kanji", "no": 30, "t": "盗難事件"}, "漢字 Unit 6-5": {"s": "kanji", "no": 31, "t": "犯罪"}, "漢字 Unit 7-1": {"s": "kanji", "no": 32, "t": "政治"}, "漢字 Unit 7-2": {"s": "kanji", "no": 33, "t": "経済"}, "漢字 Unit 7-3": {"s": "kanji", "no": 34, "t": "国際問題"}, "漢字 Unit 7-4": {"s": "kanji", "no": 35, "t": "信頼できる情報"}, "漢字 Unit 7-5": {"s": "kanji", "no": 36, "t": "健康管理"}, "漢字 Unit 8-1": {"s": "kanji", "no": 37, "t": "宇宙"}, "漢字 Unit 8-2": {"s": "kanji", "no": 38, "t": "化学"}, "漢字 Unit 8-3": {"s": "kanji", "no": 39, "t": "物理学"}, "漢字 Unit 8-4": {"s": "kanji", "no": 40, "t": "実験"}, "漢字 Unit 8-5": {"s": "kanji", "no": 41, "t": "数学"}, "漢字 Unit 9-1": {"s": "kanji", "no": 42, "t": "統計"}, "漢字 Unit 9-2": {"s": "kanji", "no": 43, "t": "アンケート調査"}, "漢字 Unit 9-3": {"s": "kanji", "no": 44, "t": "考察"}, "漢字 Unit 9-4": {"s": "kanji", "no": 45, "t": "質問"}, "漢字 Unit 9-5": {"s": "kanji", "no": 46, "t": "研究室"}, "漢字 Unit 10-1": {"s": "kanji", "no": 47, "t": "新しい音読み①"}, "漢字 Unit 10-2": {"s": "kanji", "no": 48, "t": "新しい音読み②"}, "漢字 Unit 10-3": {"s": "kanji", "no": 49, "t": "新しい音読み③"}, "漢字 Unit 10-4": {"s": "kanji", "no": 50, "t": "新しい訓読み①"}, "漢字 Unit 10-5": {"s": "kanji", "no": 51, "t": "新しい訓読み②"}};
+var BUILD = "10/31 15:03";
+</script>
+<script>
+/* おぼえるドリル 共通コード（学生アプリ・先生アプリ共通） */
+var K = { GROW: 0.45, LOSS: 0.5, DECAY: 3, WEAK: 40, GOOD: 75 };
+var DAY = 86400000;
+var SECTIONS = {
+  gengo: { name: '言語知識（文字・語彙・文法）', subj: ['kanji', 'goi', 'bunpo'] },
+  dokkai: { name: '読解', subj: ['dokkai'] },
+  choukai: { name: '聴解', subj: ['choukai'] }
+};
+var SUBJ_NAME = { kanji: '漢字', goi: '語彙', bunpo: '文法', dokkai: '読解', choukai: '聴解' };
+var QTYPE_NAME = {
+  'kanji-read': '漢字の読み', 'kanji-write': '漢字の表記', 'goi-form': '語形成', 'goi-context': '文脈規定',
+  'goi-synonym': '言い換え類義', 'goi-usage': '用法', 'bunpo-form': '文法形式の判断',
+  'bunpo-compose': '文の組み立て', 'bunpo-text': '文章の文法', 'dokkai-short': '短文読解', 'dokkai-mid': '中文読解', 'dokkai-compare': '統合理解（AとB）', 'dokkai-long': '長文読解', 'dokkai-info': '情報検索（チラシ）', 'choukai': '聴解'
+};
+function sectionOf(subject) {
+  for (var k in SECTIONS) if (SECTIONS[k].subj.indexOf(subject) >= 0) return k;
+  return 'gengo';
+}
+/* 今の記憶度（0〜100）。it = {s, streak, last(ms)} */
+function curMem(it, now) {
+  if (!it) return 0;
+  var d = Math.max(0, (now - it.last) / DAY);
+  return it.s * Math.exp(-d / (K.DECAY * (1 + it.streak)));
+}
+function updItem(it, correct, now) {
+  var m = curMem(it, now);
+  var streak = it ? it.streak : 0;
+  if (correct) return { s: m + (100 - m) * K.GROW, streak: streak + 1, last: now };
+  return { s: m * K.LOSS, streak: 0, last: now };
+}
+function memLabel(m, seen) {
+  if (!seen) return '未学習';
+  return m < K.WEAK ? 'よわい' : (m < K.GOOD ? 'もうすこし' : 'おぼえた');
+}
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
+}
+/* {漢字|よみ} → ruby、[[語]] → 下線 */
+function rb(s) {
+  s = esc(s);
+  s = s.replace(/\{([^|{}]+)\|([^{}]+)\}/g, '<ruby>$1<rt>$2</rt></ruby>');
+  s = s.replace(/\[\[(.+?)\]\]/g, '<u>$1</u>');
+  return s;
+}
+function plain(s) { return String(s).replace(/\{([^|{}]+)\|[^{}]+\}/g, '$1').replace(/\[\[|\]\]/g, ''); }
+function fnv(s) {
+  var h = 0x811c9dc5;
+  for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return ('00000000' + h.toString(16)).slice(-8);
+}
+/* 記録コード：OBO1|class|s4|sessionId|login(秒)|end(秒)|ev;ev;…|chk
+   ev = ts(秒),itemId,正誤(1/0),ミリ秒,モード(p/m) */
+function encodeRecord(r) {
+  var ev = r.events.map(function (e) {
+    return [Math.round(e.ts / 1000), e.id, e.c ? 1 : 0, e.ms, e.mode === 'mock' ? 'm' : (e.mode === 'lesson' ? 'l' : (e.mode === 'report' ? 'r' : 'p'))].join(',');
+  }).join(';');
+  var body = ['OBO1', r.cls, r.s4, r.sid, Math.round(r.login / 1000), Math.round(r.end / 1000), ev].join('|');
+  return body + '|' + fnv(body);
+}
+function decodeRecord(code) {
+  code = String(code || '').trim();
+  var i = code.lastIndexOf('|');
+  if (i < 0) return null;
+  var body = code.slice(0, i), chk = code.slice(i + 1);
+  if (fnv(body) !== chk) return { bad: true };
+  var p = body.split('|');
+  if (p[0] !== 'OBO1' || p.length < 7) return { bad: true };
+  var events = p[6] ? p[6].split(';').map(function (x) {
+    var q = x.split(',');
+    return { ts: +q[0] * 1000, id: q[1], c: q[2] === '1', ms: +q[3], mode: q[4] === 'm' ? 'mock' : (q[4] === 'l' ? 'lesson' : (q[4] === 'r' ? 'report' : 'practice')) };
+  }) : [];
+  return { cls: p[1], s4: p[2], sid: p[3], login: +p[4] * 1000, end: +p[5] * 1000, events: events };
+}
+function fmtTime(ms) {
+  var d = new Date(ms), z = function (n) { return ('0' + n).slice(-2); };
+  return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
+}
+function daysLeft(dateStr, now) {
+  var t = new Date(dateStr + 'T09:00:00+09:00').getTime();
+  return Math.ceil((t - now) / DAY);
+}
+
+/* ポイント：1問答えるごとに増える（正解10・不正解3）。科目ごとにレベルが上がる。設定は config.json の points */
+function ptCfg() { return (typeof CFG !== 'undefined' && CFG.points) || {}; }
+function ptOf(ok) { var p = ptCfg(); return ok ? (p.correct != null ? p.correct : 10) : (p.wrong != null ? p.wrong : 3); }
+function ptLevels() { return ptCfg().levels || [0, 100, 250, 500, 900, 1500, 2300, 3300, 4600, 6200, 8200]; }
+function levelOf(pts) {
+  var L = ptLevels(), lv = 0;
+  for (var i = 0; i < L.length; i++) if (pts >= L[i]) lv = i;
+  return { lv: lv + 1, base: L[lv], next: lv + 1 < L.length ? L[lv + 1] : null };
+}
+
+/* ---------- 推移グラフ（学生アプリの「自分の学習状況」と、先生アプリの学生画面で共通） ---------- */
+var SUBJ_COLOR = { all: 'var(--navy)', kanji: '#d98a00', goi: '#2a7de1', bunpo: '#2e9e5b', dokkai: '#a855c7' };
+function bucketStart(ts, g) {
+  var d = new Date(ts); d.setHours(0, 0, 0, 0);
+  if (g === 'week') d.setDate(d.getDate() - (d.getDay() + 6) % 7);   // 月曜はじまり
+  if (g === 'month') d.setDate(1);
+  return d.getTime();
+}
+function bucketStep(t, g, dir) {
+  var d = new Date(t);
+  if (g === 'month') d.setMonth(d.getMonth() + dir); else d.setDate(d.getDate() + dir * (g === 'week' ? 7 : 1));
+  return d.getTime();
+}
+function bucketLabel(t, g) { var d = new Date(t); return g === 'month' ? (d.getMonth() + 1) + '月' : (d.getMonth() + 1) + '/' + d.getDate(); }
+function niceMax(m) {
+  if (!(m > 0)) return 10;
+  var p = Math.pow(10, Math.floor(Math.log(m) / Math.LN10)), c = [1, 2, 5, 10];
+  for (var i = 0; i < c.length; i++) if (c[i] * p >= m) return c[i] * p;
+  return 10 * p;
+}
+/* evs: [{ts,id,c}]  ses: [{login,end}]  subjOf(id) → 科目名（無ければ null）  count: いくつ分さかのぼるか */
+function trendPack(evs, ses, g, count, subjOf, nowTs) {
+  var B = [], t = bucketStart(nowTs, g), i;
+  for (i = 0; i < count; i++) { B.unshift({ t0: t, t1: bucketStep(t, g, 1), label: bucketLabel(t, g), n: 0, ok: 0, min: 0, subj: {} }); t = bucketStep(t, g, -1); }
+  var at = function (ts) { for (var k = B.length - 1; k >= 0; k--) if (ts >= B[k].t0 && ts < B[k].t1) return B[k]; return null; };
+  evs.forEach(function (e) {
+    var b = at(e.ts); if (!b) return; b.n++; if (e.c) b.ok++;
+    var s = subjOf(e.id); if (s) { var a = b.subj[s] = b.subj[s] || [0, 0]; a[1]++; if (e.c) a[0]++; }
+  });
+  ses.forEach(function (x) { var b = at(x.login); if (b) b.min += Math.max(1, (x.end - x.login) / 60000); });
+  // 記憶度の推移：記録を順にたどって、各期間の終わりの時点の、科目ごとの記憶度（平均）を出す
+  var ids = {}; DATA.forEach(function (d) { (ids[d.subject] = ids[d.subject] || []).push(d.id); });
+  var sorted = evs.slice().sort(function (a, b) { return a.ts - b.ts; }), items = {}, p = 0, mem = {};
+  B.forEach(function (b) {
+    var endT = Math.min(b.t1 - 1, nowTs);
+    while (p < sorted.length && sorted[p].ts <= endT) { items[sorted[p].id] = updItem(items[sorted[p].id], sorted[p].c, sorted[p].ts); p++; }
+    for (var sj in ids) {
+      var seen = ids[sj].some(function (id) { return items[id]; });
+      (mem[sj] = mem[sj] || []).push(seen ? ids[sj].reduce(function (a, id) { return a + curMem(items[id], endT); }, 0) / ids[sj].length : null);
+    }
+  });
+  return { B: B, mem: mem, subjects: Object.keys(ids).filter(function (s) { return s !== 'choukai'; }) };
+}
+function lineChart(o) {
+  var W = 320, H = o.h || 150, L = 32, R = 8, T0 = 10, Bm = 22, n = o.labels.length, any = false, max = o.max;
+  o.series.forEach(function (s) { s.vals.forEach(function (v) { if (v != null) any = true; }); });
+  if (!any) return '<div class="sub" style="padding:14px 0">まだ データが ありません</div>';
+  if (max == null) { var m = 0; o.series.forEach(function (s) { s.vals.forEach(function (v) { if (v != null && v > m) m = v; }); }); max = niceMax(m); }
+  var X = function (i) { return n > 1 ? L + (W - L - R) * i / (n - 1) : (L + W - R) / 2; };
+  var Y = function (v) { return T0 + (H - T0 - Bm) * (1 - Math.min(v, max) / max); };
+  var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" style="max-width:720px;display:block" role="img">', i, k;
+  for (k = 0; k <= 4; k++) {
+    var gv = max * k / 4, gy = Y(gv);
+    s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + gy + '" y2="' + gy + '" stroke="var(--line)" stroke-width="1"/>' +
+      '<text x="' + (L - 4) + '" y="' + (gy + 3) + '" text-anchor="end" font-size="9" fill="var(--sub)">' + (Math.round(gv * 10) / 10) + '</text>';
+  }
+  var step = Math.max(1, Math.ceil(n / 7));
+  for (i = 0; i < n; i++) if (i % step === 0 || i === n - 1) s += '<text x="' + X(i) + '" y="' + (H - 7) + '" text-anchor="' + (i === n - 1 && n > 1 ? 'end' : 'middle') + '" font-size="9" fill="var(--sub)">' + o.labels[i] + '</text>';
+  o.series.forEach(function (se) {
+    var seg = [];
+    var flush = function () { if (seg.length > 1) s += '<polyline fill="none" stroke="' + se.color + '" stroke-width="2" stroke-linejoin="round" points="' + seg.join(' ') + '"/>'; seg = []; };
+    se.vals.forEach(function (v, j) { if (v == null) flush(); else seg.push(X(j).toFixed(1) + ',' + Y(v).toFixed(1)); });
+    flush();
+    se.vals.forEach(function (v, j) {
+      if (v != null) s += '<circle cx="' + X(j).toFixed(1) + '" cy="' + Y(v).toFixed(1) + '" r="2.6" fill="' + se.color + '"><title>' + se.name + ' ' + o.labels[j] + '：' + (Math.round(v * 10) / 10) + (o.unit || '') + '</title></circle>';
+    });
+  });
+  s += '</svg>';
+  if (o.series.length > 1) s += '<div class="sub" style="font-size:13px">' + o.series.map(function (se) { return '<span style="color:' + se.color + '">●</span> ' + se.name; }).join('　') + '</div>';
+  return s;
+}
+/* 4つのグラフ（正答率・解いた問題数・学習時間・記憶度）の HTML。title(s) は呼び出し側の言い回し用 */
+function trendCharts(pk, tt) {
+  tt = tt || {};
+  var labels = pk.B.map(function (b) { return b.label; }), pct = function (a, n) { return n ? Math.round(100 * a / n) : null; };
+  var accS = [{ name: '全体', color: SUBJ_COLOR.all, vals: pk.B.map(function (b) { return pct(b.ok, b.n); }) }];
+  var memS = [];
+  pk.subjects.forEach(function (sj) {
+    accS.push({ name: SUBJ_NAME[sj] || sj, color: SUBJ_COLOR[sj] || '#888', vals: pk.B.map(function (b) { return b.subj[sj] ? pct(b.subj[sj][0], b.subj[sj][1]) : null; }) });
+    if (pk.mem[sj]) memS.push({ name: SUBJ_NAME[sj] || sj, color: SUBJ_COLOR[sj] || '#888', vals: pk.mem[sj] });
+  });
+  var box = function (title, svg) { return '<div class="card"><h2>' + title + '</h2>' + svg + '</div>'; };
+  return box(tt.acc || '正答率（%）', lineChart({ labels: labels, series: accS, max: 100, unit: '%' })) +
+    box(tt.n || '解いた問題数', lineChart({ labels: labels, series: [{ name: '問題数', color: SUBJ_COLOR.all, vals: pk.B.map(function (b) { return b.n; }) }], unit: '問' })) +
+    box(tt.min || '学習時間（分）', lineChart({ labels: labels, series: [{ name: '学習時間', color: SUBJ_COLOR.all, vals: pk.B.map(function (b) { return Math.round(b.min); }) }], unit: '分' })) +
+    box(tt.mem || '記憶度の推移（%）', lineChart({ labels: labels, series: memS, max: 100, unit: '%' }));
+}
+</script>
+<script>
+var $app = document.getElementById('app');
+var SRC = { name: '', nrec: 0, bad: 0, at: 0 };
+var STU = [], ROSTER = {}, ROSTER_N = 0, ROSTER_JP = {}, ROSTER_DEPT = {}, ROSTER_MAIL = {}, ROSTER_NAME = '', DEPT = '';
+var CLS = '', SORT = 'last', Q = '', SEL = null, TESTINC = false;
+var LTOT = (function () { var n = 0; for (var k in LESSONS) if (/^(kanji|goi|bunpo)$/.test(LESSONS[k].s)) n++; return n || 265; })();
+
+/* ---------- xlsx / csv の読みこみ ---------- */
+function u16(b, o) { return b[o] | b[o + 1] << 8; }
+function u32(b, o) { return (b[o] | b[o + 1] << 8 | b[o + 2] << 16 | b[o + 3] << 24) >>> 0; }
+async function inflate(data) {
+  var ds = new DecompressionStream('deflate-raw');
+  var w = ds.writable.getWriter(); w.write(data); w.close();
+  return new Uint8Array(await new Response(ds.readable).arrayBuffer());
+}
+async function unzip(buf) {
+  var b = new Uint8Array(buf), e = b.length - 22;
+  while (e >= 0 && u32(b, e) !== 0x06054b50) e--;
+  if (e < 0) throw new Error('xlsxではありません');
+  var n = u16(b, e + 10), p = u32(b, e + 16), files = {};
+  for (var i = 0; i < n; i++) {
+    var meth = u16(b, p + 10), csz = u32(b, p + 20), nl = u16(b, p + 28), el = u16(b, p + 30), cl = u16(b, p + 32), lo = u32(b, p + 42);
+    var name = new TextDecoder().decode(b.subarray(p + 46, p + 46 + nl));
+    var lnl = u16(b, lo + 26), lel = u16(b, lo + 28), ds = lo + 30 + lnl + lel;
+    files[name] = { meth: meth, raw: b.subarray(ds, ds + csz) };
+    p += 46 + nl + el + cl;
+  }
+  return files;
+}
+async function fileText(f) { return new TextDecoder().decode(f.meth === 0 ? f.raw : await inflate(f.raw)); }
+function colIdx(ref) { var m = /^([A-Z]+)/.exec(ref)[1], n = 0; for (var i = 0; i < m.length; i++) n = n * 26 + m.charCodeAt(i) - 64; return n - 1; }
+async function readXlsx(buf) {
+  var f = await unzip(buf), P = new DOMParser(), shared = [];
+  if (f['xl/sharedStrings.xml']) {
+    var sx = P.parseFromString(await fileText(f['xl/sharedStrings.xml']), 'text/xml');
+    Array.prototype.forEach.call(sx.getElementsByTagName('si'), function (si) {
+      shared.push(Array.prototype.map.call(si.getElementsByTagName('t'), function (t) { return t.textContent; }).join(''));
+    });
+  }
+  var names = Object.keys(f).filter(function (k) { return /^xl\/worksheets\/sheet\d+\.xml$/.test(k); }).sort();
+  var sx2 = P.parseFromString(await fileText(f[names[0]]), 'text/xml'), rows = [];
+  Array.prototype.forEach.call(sx2.getElementsByTagName('row'), function (r) {
+    var row = [];
+    Array.prototype.forEach.call(r.getElementsByTagName('c'), function (c) {
+      var t = c.getAttribute('t'), v = c.getElementsByTagName('v')[0], val = '';
+      if (t === 'inlineStr') val = Array.prototype.map.call(c.getElementsByTagName('t'), function (x) { return x.textContent; }).join('');
+      else if (v) val = t === 's' ? (shared[+v.textContent] || '') : v.textContent;
+      row[colIdx(c.getAttribute('r'))] = val;
+    });
+    rows.push(row);
+  });
+  return rows;
+}
+function readCsv(text) {
+  var rows = [], row = [], cur = '', q = false;
+  text = text.replace(/^﻿/, '');
+  for (var i = 0; i < text.length; i++) {
+    var ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ',') { row.push(cur); cur = ''; }
+    else if (ch === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+    else if (ch !== '\r') cur += ch;
+  }
+  if (cur || row.length) { row.push(cur); rows.push(row); }
+  return rows;
+}
+async function fileRows(file) { return /\.csv$/i.test(file.name) ? readCsv(await file.text()) : readXlsx(await file.arrayBuffer()); }
+
+/* 記録：全セルから OBO1 で始まる記録コードを集める */
+function ingest(rows, name) {
+  var recs = [], bad = 0, seen = {};
+  rows.forEach(function (r) {
+    (r || []).forEach(function (c) {
+      c = String(c || '');
+      if (c.indexOf('OBO1|') !== 0 || seen[c]) return; seen[c] = 1;
+      var d = decodeRecord(c);
+      if (!d || d.bad) bad++; else recs.push(d);
+    });
+  });
+  SRC = { name: name, nrec: recs.length, bad: bad, at: Date.now() };
+  aggregate(recs);
+}
+/* 名簿：学籍番号と氏名の列を探す（見出しに「学籍／番号」「氏名／名前」）。見つからなければ 1列目=番号、2列目=名前 */
+function ingestRoster(rows, name) {
+  var ic = 0, nc = 1, mc = -1, dc = -1, jc = -1, start = 0;
+  for (var i = 0; i < Math.min(rows.length, 10); i++) {
+    var r = rows[i] || [], a = -1, b = -1, m = -1, dp = -1, jp = -1;
+    r.forEach(function (c, j) { c = String(c || ''); if (/学籍|番号/.test(c) && a < 0) a = j; if (/氏名|名前/.test(c) && b < 0) b = j; if (/メール|mail|Teams|アカウント/i.test(c) && m < 0) m = j; if (/所属/.test(c) && dp < 0) dp = j; if (/日本語/.test(c) && jp < 0) jp = j; });
+    if (a >= 0 && b >= 0) { ic = a; nc = b; mc = m; dc = dp; jc = jp; start = i + 1; break; }
+  }
+  ROSTER = {}; ROSTER_MAIL = {}; ROSTER_DEPT = {}; ROSTER_JP = {}; DEPT = ''; ROSTER_N = 0;
+  for (var k = start; k < rows.length; k++) {
+    var rr = rows[k] || [], id = String(rr[ic] || '').replace(/\D/g, ''), nm = String(rr[nc] || '').replace(/\s+/g, ' ').trim();
+    if (id && nm) { ROSTER[id] = nm; ROSTER_N++; var dd = dc >= 0 ? String(rr[dc] || '').trim() : ''; if (dd) ROSTER_DEPT[id] = dd; var jj = jc >= 0 ? String(rr[jc] || '').trim() : ''; if (jj) ROSTER_JP[id] = jj; var ml = mc >= 0 ? String(rr[mc] || '').trim() : ''; if (/^[^\s@]+@[^\s@]+$/.test(ml)) ROSTER_MAIL[id] = ml; }
+  }
+  ROSTER_NAME = name;
+}
+
+
+/* ---------- ペース（先生用PC版と同じ基準：config.json の plan） ---------- */
+function paceOf(cleared, rec7, span) {
+  span = Math.min(7, Math.max(1, span || 7));
+  var pl = CFG.plan || {}, buf = pl.bufferDays != null ? pl.bufferDays : 14, tg0 = pl.target != null ? pl.target : 0.15, tg = tg0, need, left;
+  for (;;) { need = Math.ceil(LTOT * tg); left = Math.max(0, need - cleared); if (left > 0 || tg >= 1) break; tg = Math.min(1, Math.round((tg + 0.1) * 100) / 100); }
+  var days = Math.max(1, daysLeft(CFG.exam.date, Date.now()) - buf), per = left / days;
+  var okR = pl.okRatio != null ? pl.okRatio : 0.8, clR = pl.closeRatio != null ? pl.closeRatio : 0.4, ratio = per > 0 ? (rec7 / span) / per : 1;
+  var st = !left ? 'done' : ((cleared === 0 && rec7 === 0) ? 'none' : (ratio >= okR ? 'ok' : (ratio >= clR ? 'close' : 'slow')));
+  return { st: st, need: need, left: left, rec7: rec7, tg: tg };
+}
+var PACE_TXT = { done: '達成', ok: '順調', close: 'もう少し', slow: 'おくれ', none: 'まだ' };
+var PACE_CLS = { done: 'good', ok: 'good', close: 'mid', slow: 'weak', none: '' };
+
+/* ---------- 集計：だれが、いつログインして、どのくらい勉強したか ---------- */
+function aggregate(recs) {
+  var by = {}, t = Date.now(), d0 = new Date(); d0.setHours(0, 0, 0, 0); var today = d0.getTime();
+  recs.forEach(function (r) {
+    var k = r.cls + '_' + r.s4, s = by[k] = by[k] || { cls: r.cls, s4: r.s4, ses: {}, ev: {} };
+    var ss = s.ses[r.sid] = s.ses[r.sid] || { login: r.login, end: r.end };
+    ss.login = Math.min(ss.login, r.login); ss.end = Math.max(ss.end, r.end);
+    r.events.forEach(function (e) { s.ev[e.ts + '|' + e.id] = e; });
+  });
+  STU = Object.keys(by).map(function (k) {
+    var s = by[k], ses = Object.keys(s.ses).map(function (x) { return s.ses[x]; }).sort(function (a, b) { return b.login - a.login; });
+    var min = function (x) { return Math.max(1, (x.end - x.login) / 60000); };
+    var last = ses.reduce(function (m, x) { return Math.max(m, x.end); }, 0), lastLogin = ses.length ? ses[0].login : 0;
+    var tmin = 0, wmin = 0, wn = 0, days = [];
+    for (var i = 13; i >= 0; i--) days.push({ t: today - i * DAY, m: 0 });
+    ses.forEach(function (x) {
+      if (x.login >= today) tmin += min(x);
+      if (x.end >= t - 7 * DAY) { wmin += min(x); wn++; }
+      for (var j = 0; j < 14; j++) if (x.login >= days[j].t && x.login < days[j].t + DAY) days[j].m += min(x);
+    });
+    var lessonAt = {};
+    Object.keys(s.ev).forEach(function (x) { var e = s.ev[x]; if (e.id.indexOf('L:') === 0 && e.c) { var l = e.id.slice(2); if (!lessonAt[l] || e.ts < lessonAt[l]) lessonAt[l] = e.ts; } });
+    var cleared = Object.keys(lessonAt).length, rec7 = Object.keys(lessonAt).filter(function (l) { return lessonAt[l] > t - 7 * DAY; }).length;
+    var first = ses.reduce(function (m, x) { return Math.min(m, x.login); }, t);
+    var nq = Object.keys(s.ev).filter(function (x) { return !/^[LR]:/.test(s.ev[x].id); }).length;
+    return { key: k, cls: s.cls, s4: s.s4, ses: ses, last: last, lastLogin: lastLogin, tmin: tmin, wmin: wmin, wn: wn, days: days, cleared: cleared, nq: nq, pace: paceOf(cleared, rec7, (t - first) / DAY) };
+  });
+}
+function isTestId(id) { return /^9999/.test(id) || ROSTER_JP[id] === 'テスト'; }
+function visibleStu() { return STU.filter(function (s) { return TESTINC || !isTestId(s.s4); }); }
+function nameOf(s) { return ROSTER[s.s4] || ''; }
+
+function ago(ms) {
+  if (!ms) return '記録なし';
+  var d = Date.now() - ms, m = Math.floor(d / 60000), h = Math.floor(d / 3600000), dd = Math.floor(d / DAY);
+  var t = new Date(ms), z = function (n) { return ('0' + n).slice(-2); }, hm = z(t.getHours()) + ':' + z(t.getMinutes());
+  var d0 = new Date(); d0.setHours(0, 0, 0, 0);
+  if (ms >= d0.getTime()) return '今日 ' + hm + '（' + (m < 60 ? Math.max(0, m) + '分前' : h + '時間前') + '）';
+  if (ms >= d0.getTime() - DAY) return '昨日 ' + hm;
+  return (t.getMonth() + 1) + '/' + t.getDate() + ' ' + hm + '（' + dd + '日前）';
+}
+var fmin = function (x) { return Math.round(x) + '分'; };
+
+/* ---------- 画面 ---------- */
+function head() {
+  var h = '<h1>おぼえるドリル 先生（スマホ）</h1>' +
+    '<div class="card"><input type="file" id="fi" accept=".xlsx,.csv" style="display:none"><input type="file" id="fr" accept=".xlsx,.csv" style="display:none">' +
+    '<button class="btn pri" id="pick">① 記録ファイルを選ぶ</button><button class="btn sm" id="pickr">名簿を選ぶ（名前を見たいとき）</button>' +
+    '<div class="sub" style="margin-top:6px">' + (SRC.name ? '記録：' + esc(SRC.name) + '（' + SRC.nrec + ' 件）　読みこみ ' + fmtTime(SRC.at) + (SRC.bad ? '<br><span class="err">壊れた記録が ' + SRC.bad + ' 件あります</span>' : '') : 'OneDriveの「学生の記録.xlsx」を選びます。') +
+    (ROSTER_N ? '<br>名簿：' + ROSTER_N + ' 人（このスマホの画面の中だけで表示）' : '') + '</div>' +
+    '<div class="sub" style="margin-top:6px">ファイルは、このスマホの中だけで読みます。どこにも送りません。保存もしません（ページを閉じると消えます）。</div></div>';
+  return h;
+}
+function bindHead() {
+  var pk = document.getElementById('pick'), pr = document.getElementById('pickr'), fi = document.getElementById('fi'), fr = document.getElementById('fr');
+  pk.onclick = function () { fi.click(); }; pr.onclick = function () { fr.click(); };
+  fi.onchange = function (e) { var f = e.target.files[0]; if (f) fileRows(f).then(function (r) { ingest(r, f.name); render(); }).catch(fail); };
+  fr.onchange = function (e) { var f = e.target.files[0]; if (f) fileRows(f).then(function (r) { ingestRoster(r, f.name); render(); }).catch(fail); };
+}
+function fail(e) { alert('読みこめません: ' + (e && e.message ? e.message : e) + '\nExcelで開いたままだと読めないことがあります。'); }
+function render() { if (SEL) viewStudent(); else viewList(); }
+
+function viewList() {
+  var list = visibleStu(), t = Date.now(), d0 = new Date(); d0.setHours(0, 0, 0, 0);
+  var h = head();
+  if (!STU.length) { $app.innerHTML = h; bindHead(); return; }
+  var tc = list.filter(function (s) { return s.tmin > 0; }).length, w = list.reduce(function (a, s) { return a + s.wmin; }, 0), idle = list.filter(function (s) { return (t - s.last) / DAY >= (CFG.teacher && CFG.teacher.idleDays || 3); }).length;
+  h += '<div class="kpis"><div class="kpi"><b>' + tc + '</b><span>今日 学習した人</span></div><div class="kpi"><b>' + Math.round(w) + '</b><span>7日の合計（分）</span></div><div class="kpi"><b style="color:var(--red)">' + idle + '</b><span>3日以上 学習なし</span></div></div>';
+  var classes = {}; list.forEach(function (s) { classes[s.cls] = 1; });
+  h += '<div class="card"><div class="row"><select id="cls"><option value="">すべてのクラス</option>' + Object.keys(classes).sort().map(function (c) { return '<option' + (c === CLS ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select>' +
+    '<select id="sort">' + [['last', 'ログインが新しい順'], ['tmin', '今日の学習が長い順'], ['wmin', '7日の学習が長い順'], ['wn', 'ログイン回数の多い順'], ['cleared', '合格レッスンの多い順'], ['idle', 'ログインが古い順'], ['s4', '学籍番号順']].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === SORT ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
+    '<div style="margin-top:8px"><input type="text" id="q" placeholder="学籍番号や名前でさがす" value="' + esc(Q) + '" style="width:100%"></div>' +
+    (STU.some(function (s) { return isTestId(s.s4); }) ? '<label class="sub" style="display:block;margin-top:6px"><input type="checkbox" id="ti"' + (TESTINC ? ' checked' : '') + '> テストの学生も含める</label>' : '') + '</div>';
+  var rows = list.filter(function (s) { return (!CLS || s.cls === CLS) && (!Q || s.s4.indexOf(Q) >= 0 || nameOf(s).indexOf(Q) >= 0); });
+  var cmp = { last: function (a, b) { return b.lastLogin - a.lastLogin; }, idle: function (a, b) { return a.lastLogin - b.lastLogin; }, tmin: function (a, b) { return b.tmin - a.tmin; }, wmin: function (a, b) { return b.wmin - a.wmin; }, wn: function (a, b) { return b.wn - a.wn; }, cleared: function (a, b) { return b.cleared - a.cleared; }, s4: function (a, b) { return a.s4 < b.s4 ? -1 : 1; } }[SORT];
+  rows.sort(cmp);
+  h += '<div class="sub">' + rows.length + ' 人</div>' + rows.map(function (s) {
+    var nm = nameOf(s);
+    return '<div class="stu" data-k="' + esc(s.key) + '"><div class="row"><span class="nm">' + esc(s.cls) + '　' + (nm ? esc(nm) + '<span class="sub">　' + esc(s.s4) + '</span>' : esc(s.s4)) + '</span>' +
+      '<span class="chip ' + PACE_CLS[s.pace.st] + '">' + PACE_TXT[s.pace.st] + '</span></div>' +
+      '<div class="sub">最後のログイン：' + esc(ago(s.lastLogin)) + '</div>' +
+      '<div class="nums"><span>今日 <b>' + fmin(s.tmin) + '</b></span><span>7日 <b>' + fmin(s.wmin) + '</b></span><span>ログイン <b>' + s.wn + '</b>回</span><span>合格 <b>' + s.cleared + '</b></span></div></div>';
+  }).join('');
+  $app.innerHTML = h; bindHead();
+  document.getElementById('cls').onchange = function (e) { CLS = e.target.value; viewList(); };
+  document.getElementById('sort').onchange = function (e) { SORT = e.target.value; viewList(); };
+  document.getElementById('q').onchange = function (e) { Q = e.target.value.trim(); viewList(); };
+  var ti = document.getElementById('ti'); if (ti) ti.onchange = function (e) { TESTINC = e.target.checked; viewList(); };
+  Array.prototype.forEach.call($app.querySelectorAll('.stu'), function (e) { e.onclick = function () { SEL = e.getAttribute('data-k'); viewStudent(); window.scrollTo(0, 0); }; });
+}
+
+function viewStudent() {
+  var s = STU.filter(function (x) { return x.key === SEL; })[0];
+  if (!s) { SEL = null; return viewList(); }
+  var nm = nameOf(s), mx = Math.max.apply(null, s.days.map(function (d) { return d.m; }).concat([10]));
+  var h = '<button class="btn sm" id="back">← 一覧にもどる</button><h1>' + esc(s.cls) + '　' + (nm ? esc(nm) + '<span class="sub">　' + esc(s.s4) + '</span>' : esc(s.s4)) + '</h1>' +
+    '<div class="kpis"><div class="kpi"><b>' + Math.round(s.tmin) + '</b><span>今日（分）</span></div><div class="kpi"><b>' + Math.round(s.wmin) + '</b><span>7日（分）</span></div><div class="kpi"><b>' + s.wn + '</b><span>7日のログイン</span></div></div>' +
+    '<div class="card"><div class="row"><span>ペース</span><span class="chip ' + PACE_CLS[s.pace.st] + '">' + PACE_TXT[s.pace.st] + '</span></div>' +
+    '<div class="sub">合格レッスン ' + s.cleared + '　／　目標 ' + Math.round(s.pace.tg * 100) + '%（' + s.pace.need + 'レッスン）　最近7日の合格 ' + s.pace.rec7 + '</div>' +
+    '<div class="bar" style="margin-top:6px"><i style="width:' + Math.min(100, 100 * s.cleared / Math.max(1, s.pace.need)) + '%"></i></div>' +
+    '<div class="sub" style="margin-top:6px">答えた問題 ' + s.nq + ' 問　／　最後の学習 ' + esc(ago(s.last)) + '</div></div>' +
+    '<div class="card"><h2>この14日の学習時間（分）</h2><div class="chart">' + s.days.map(function (d) { return '<div style="height:' + Math.max(2, 70 * d.m / mx) + 'px"><span>' + (d.m ? Math.round(d.m) : '') + '</span></div>'; }).join('') + '</div>' +
+    '<div class="lbl">' + s.days.map(function (d) { var x = new Date(d.t); return '<div>' + (x.getMonth() + 1) + '/' + x.getDate() + '</div>'; }).join('') + '</div></div>' +
+    '<div class="card"><h2>ログインの記録（新しい順）</h2><table><tr><th>ログイン</th><th>終了</th><th>分</th></tr>' +
+    s.ses.slice(0, 30).map(function (x) { return '<tr><td>' + fmtTime(x.login) + '</td><td>' + fmtTime(x.end) + '</td><td>' + Math.max(1, Math.round((x.end - x.login) / 60000)) + '</td></tr>'; }).join('') + '</table></div>';
+  $app.innerHTML = h;
+  document.getElementById('back').onclick = function () { SEL = null; viewList(); window.scrollTo(0, 0); };
+}
+render();
+</script>
+</body>
+</html>
