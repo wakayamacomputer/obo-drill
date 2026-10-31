@@ -102,7 +102,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{padding:5px 4px;b
 <div id="me" hidden></div>
 <script>
 var DATA = /*__DATA__*/[];
-var CFG = {"appName": "おぼえるドリル", "classes": ["1J1", "1J2", "1J3", "1J4", "1C1", "1C2", "1IT1", "1IT2", "2J1", "2J2", "2J3", "2J4", "2C1", "2C2", "2IT1", "2IT2"], "idDigits": 8, "exam": {"date": "2026-12-06", "label": "2026年12月", "sectionMinPct": 32, "riskMemPct": 40, "goalPct": 75}, "practiceSize": 10, "mock": {"size": 20, "minutes": 15}, "appUrl": "", "backend": "none", "formsUrl": "", "teacher": {"weeklyTargetMin": 120, "idleDays": 3}, "points": {"correct": 10, "wrong": 3, "levels": [0, 100, 250, 500, 900, 1500, 2300, 3300, 4600, 6200, 8200]}, "mockGate": {"lessons": {"goi": 0, "bunpo": 0, "kanji": 0}}, "lessonPass": 0.8, "plan": {"bufferDays": 14, "target": 0.5, "minPerLesson": 10}, "testMode": true, "enc": {"salt": "1349559fd505169fe9a7cd8973d214fe", "it": 600000, "chk": "4hKyGjhqBAC0e8/8iMazeLqmn6slsp0ER8ZGUP9jkhQgxw==", "cv": "ce8b729b", "num": true, "len": 12}};
+var CFG = {"appName": "おぼえるドリル", "classes": ["1J1", "1J2", "1J3", "1J4", "1C1", "1C2", "1IT1", "1IT2", "2J1", "2J2", "2J3", "2J4", "2C1", "2C2", "2IT1", "2IT2"], "idDigits": 8, "exam": {"date": "2026-12-06", "label": "2026年12月", "sectionMinPct": 32, "riskMemPct": 40, "goalPct": 75}, "practiceSize": 10, "mock": {"size": 20, "minutes": 15}, "appUrl": "", "backend": "none", "formsUrl": "", "teacher": {"weeklyTargetMin": 120, "idleDays": 3}, "points": {"correct": 10, "wrong": 3, "levels": [0, 100, 250, 500, 900, 1500, 2300, 3300, 4600, 6200, 8200]}, "mockGate": {"lessons": {"goi": 0, "bunpo": 0, "kanji": 0}}, "lessonPass": 0.8, "plan": {"bufferDays": 14, "target": 0.15, "okRatio": 0.8, "closeRatio": 0.4, "minPerLesson": 10}, "testMode": true, "enc": {"salt": "1349559fd505169fe9a7cd8973d214fe", "it": 600000, "chk": "/GAg+3f1F6T7TROyP1nLdVwEWklxzBjjb5MMkAWjk/DRXw==", "cv": "c06e88a6", "num": true, "len": 12}};
 var MOCK = /*__MOCK__*/{};
 var CARDS = /*__CARDS__*/[];
 var LESSONS = /*__LESSONS__*/{};   // {レッスンid: {s:科目, no:番号, t:タイトル}}
@@ -915,13 +915,19 @@ function showGuide(force) {
 }
 /* ---------- 学習プラン（その学生ごとに計算する） ---------- */
 function planInfo() {
-  var dl = daysLeft(CFG.exam.date, now()), pl = CFG.plan || {}, buf = pl.bufferDays != null ? pl.bufferDays : 14, tg = pl.target != null ? pl.target : 0.5, mpl = pl.minPerLesson || 10;
-  var subs = LESSON_SUBJ.map(function (sj) {
-    var ls = lessonList(sj[0]), cl = ls.filter(function (x) { return lessonState(x.id).cleared; }), need = Math.ceil(ls.length * tg);
-    return { key: sj[0], name: sj[1], ls: ls, done: cl.length, need: need, left: Math.max(0, need - cl.length), rest: ls.filter(function (x) { return !lessonState(x.id).cleared; }) };
-  }).filter(function (x) { return x.ls.length; });
-  var need = 0, done = 0, left = 0, total = 0;
-  subs.forEach(function (x) { need += x.need; done += Math.min(x.done, x.need); left += x.left; total += x.ls.length; });
+  var dl = daysLeft(CFG.exam.date, now()), pl = CFG.plan || {}, buf = pl.bufferDays != null ? pl.bufferDays : 14, tg0 = pl.target != null ? pl.target : 0.2, mpl = pl.minPerLesson || 10;
+  var tg = tg0, subs, need, done, left, total;
+  for (;;) {   // もくひょうを たっせい したら、つぎの もくひょう（+10%）へ。そこで安心して とまらないように
+    subs = LESSON_SUBJ.map(function (sj) {
+      var ls = lessonList(sj[0]), cl = ls.filter(function (x) { return lessonState(x.id).cleared; }), nd = Math.ceil(ls.length * tg);
+      return { key: sj[0], name: sj[1], ls: ls, done: cl.length, need: nd, left: Math.max(0, nd - cl.length), rest: ls.filter(function (x) { return !lessonState(x.id).cleared; }) };
+    }).filter(function (x) { return x.ls.length; });
+    need = 0; done = 0; left = 0; total = 0;
+    subs.forEach(function (x) { need += x.need; done += Math.min(x.done, x.need); left += x.left; total += x.ls.length; });
+    if (left > 0 || tg >= 1) break;
+    tg = Math.min(1, Math.round((tg + 0.1) * 100) / 100);
+  }
+  var stretch = tg > tg0;
   var days = Math.max(1, dl - buf), per = left / days;
   var k = dayKey(now());
   var doneToday = Object.keys(ST.lessons).filter(function (l) { var L = ST.lessons[l]; return L.cleared && dayKey(L.clearedAt || L.ts || 0) === k; }).length;
@@ -942,15 +948,18 @@ function planInfo() {
     picks.push(c2[0].rest[quota[c2[0].key]]); quota[c2[0].key]++;
   }
   var recent = Object.keys(ST.lessons).filter(function (l) { var L = ST.lessons[l]; return L.cleared && (L.clearedAt || L.ts || 0) > now() - 7 * 86400000; }).length;
-  var status = !left ? 'done' : ((done === 0 && recent === 0) ? 'start' : (recent / 7 >= per * 0.8 ? 'ok' : 'slow'));
-  return { dl: dl, buf: buf, tg: tg, mpl: mpl, need: need, done: done, left: left, days: days, per: per, todayN: todayN, doneToday: doneToday, picks: picks, status: status, total: total };
+  var first = now(); (ST.events || []).forEach(function (e) { if (e.ts && e.ts < first) first = e.ts; }); Object.keys(ST.lessons).forEach(function (l) { var t0 = ST.lessons[l].clearedAt || ST.lessons[l].ts; if (t0 && t0 < first) first = t0; });
+  var span = Math.min(7, Math.max(1, (now() - first) / 86400000));   // 使いはじめて7日たっていない人は、使った日数でわる
+  var okR = pl.okRatio != null ? pl.okRatio : 0.8, clR = pl.closeRatio != null ? pl.closeRatio : 0.4, ratio = per > 0 ? (recent / span) / per : 1;
+  var status = !left ? 'done' : ((done === 0 && recent === 0) ? 'start' : (ratio >= okR ? 'ok' : (ratio >= clR ? 'close' : 'slow')));
+  return { dl: dl, buf: buf, tg: tg, stretch: stretch, mpl: mpl, need: need, done: done, left: left, days: days, per: per, todayN: todayN, doneToday: doneToday, picks: picks, status: status, total: total };
 }
 function planCard() {
   var p = planInfo(); if (!p.total) return '';
   var minutes = Math.round(p.per * p.mpl);
-  var st = p.status === 'done' ? '<b style="color:var(--good)">' + T('もくひょうを たっせい！ すばらしい！') + '</b>' : (p.status === 'start' ? '<b>' + T('さあ、はじめましょう！ {毎日|まいにち} すこしずつ。') + '</b>' : p.status === 'ok' ? '<b style="color:var(--good)">' + T('ペースは {順調|じゅんちょう}です') + '</b>' : '<b style="color:var(--red)">' + T('すこし おくれています。きょう {少|すこ}し {多|おお}めに やりましょう') + '</b>');
+  var st = p.status === 'done' ? '<b style="color:var(--good)">' + T('すべての もくひょうを たっせい！ すばらしい！') + '</b>' : (p.status === 'start' ? '<b>' + T('さあ、はじめましょう！ {毎日|まいにち} すこしずつ。') + '</b>' : p.status === 'ok' ? '<b style="color:var(--good)">' + T('ペースは {順調|じゅんちょう}です。この ちょうしで！ {時間|じかん}が あれば、もう 1レッスン') + '</b>' : p.status === 'close' ? '<b style="color:var(--warn,#d97706)">' + T('もう すこしです。きょうも レッスンを すすめましょう') + '</b>' : '<b style="color:var(--red)">' + T('すこし おくれています。きょう {少|すこ}し {多|おお}めに やりましょう') + '</b>');
   var h = '<div class="card"><div class="row"><h2>' + T('{学習|がくしゅう}プラン') + '</h2><span class="sub">' + T('{試験|しけん}まで あと ') + p.dl + T('{日|にち}') + '</span></div>' +
-    '<div class="sub" style="margin-bottom:6px">' + T('{模試|もし}や {復習|ふくしゅう}の {時間|じかん}に、さいごの ') + p.buf + T('{日|にち}は のこします。レッスンの ') + Math.round(100 * p.tg) + T('%（') + p.need + T('つ）を めざします。') + '</div>' +
+    '<div class="sub" style="margin-bottom:6px">' + T('{模試|もし}や {復習|ふくしゅう}の {時間|じかん}に、さいごの ') + p.buf + T('{日|にち}は のこします。') + (p.stretch ? T('つぎの もくひょう：') : '') + T('レッスンの ') + Math.round(100 * p.tg) + T('%（') + p.need + T('つ）を めざします。') + '</div>' +
     '<div class="row"><span>' + T('{合格|ごうかく}ずみ') + ' ' + p.done + ' / ' + p.need + '</span><span class="sub">' + (p.left ? T('あと ') + p.left + T('つ') : '') + '</span></div>' +
     '<div class="bar"><i style="width:' + Math.min(100, 100 * p.done / Math.max(1, p.need)) + '%;background:var(--red)"></i></div>';
   if (p.left) h += '<div class="sub" style="margin-top:6px">' + T('1{日|にち}に {約|やく}') + (Math.round(p.per * 10) / 10) + T('レッスン（{約|やく}') + minutes + T('{分|ふん}）') + '</div>';
